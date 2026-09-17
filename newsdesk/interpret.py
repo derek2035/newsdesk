@@ -127,7 +127,7 @@ def _char_range(text: str, quote: str) -> tuple[int | None, int | None]:
 def interpret_event(db, event) -> dict:
     prompt, ids, doc_dates = build_input(db, event)
     model = config.GRADE_MODELS.get(event["grade"], config.GRADE_MODELS["C"])
-    input_hash = hashlib.sha256((config.PROMPT_VERSION + SYSTEM_PROMPT + prompt).encode()).hexdigest()[:24]
+    input_hash = _input_hash(prompt)
     started = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     log.info("interpret %s grade=%s model=%s input=%d chars", event["slug"], event["grade"], model, len(prompt))
     try:
@@ -228,6 +228,17 @@ def _now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def _input_hash(prompt: str) -> str:
+    return hashlib.sha256((config.PROMPT_VERSION + SYSTEM_PROMPT + prompt).encode()).hexdigest()[:24]
+
+
+def _already_tried(db, event) -> bool:
+    """同样的输入已经成功调用过模型（只是没有结论通过闸门）→ 不重复花钱，等输入变化再试。"""
+    prompt, _, _ = build_input(db, event)
+    return db.one("SELECT 1 FROM generation_log WHERE event_id=? AND input_hash=? AND ok=1",
+                  (event["id"], _input_hash(prompt))) is not None
+
+
 def interpret_pending(db, slug: str | None = None, limit: int = 12, force: bool = False) -> list[dict]:
     if slug:
         events = db.q("SELECT * FROM event WHERE slug=?", (slug,))
@@ -241,6 +252,8 @@ def interpret_pending(db, slug: str | None = None, limit: int = 12, force: bool 
         if len(results) >= limit:
             break
         if not force and db.has_interpretation(ev["id"]):
+            continue
+        if not force and _already_tried(db, ev):
             continue
         results.append(interpret_event(db, ev))
     translate_titles(db)
