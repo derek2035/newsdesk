@@ -55,6 +55,7 @@ def _to_float(tok: str) -> float | None:
 def extract_numbers(text: str) -> list[float]:
     """抽出文本里所有数值（已归一化为 float）。"""
     text = unicodedata.normalize("NFKC", text)
+    text = re.sub(r"[\u2010\u2011\u2012\u2013\u2014\u2212]", "-", text)  # 各种连字符：3‑3/4（U+2011）
     out: list[float] = []
     for m in _NUM_RE.finditer(text):
         v = _to_float(m.group(1))

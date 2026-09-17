@@ -157,14 +157,20 @@ def interpret_event(db, event) -> dict:
         db.commit()
         return {"slug": event["slug"], "ok": False, "error": f"schema: {report.schema_error}"}
 
+    return _store(db, event, ids, obj, report, res.model, res.requested_model, res.backend, res.cost_usd)
+
+
+def _store(db, event, ids, obj, report, model, requested_model, backend, cost_usd, generated_at=None) -> dict:
+    drop_reasons = [{"text": d["claim"].get("text"), "reason": d["reason"]} for d in report.dropped]
     status = "ok" if report.kept else "discarded"
     interp_id = db.add_interpretation(
-        event_id=event["id"], model_name=res.model, model_version=None, prompt_version=config.PROMPT_VERSION,
+        event_id=event["id"], model_name=model, model_version=None, prompt_version=config.PROMPT_VERSION,
         author=None, status=status,
         sections={"no_prior_version": bool(obj.get("no_prior_version")),
                   "sources_consistent": obj.get("sources_consistent"),
-                  "requested_model": res.requested_model, "backend": res.backend},
-        stats={"claims_total": report.total, "claims_kept": len(report.kept), "cost_usd": res.cost_usd},
+                  "requested_model": requested_model, "backend": backend},
+        stats={"claims_total": report.total, "claims_kept": len(report.kept), "cost_usd": cost_usd},
+        generated_at=generated_at,
     )
     order = {s: i for i, s in enumerate(gates.SECTIONS)}
     for n, c in enumerate(sorted(report.kept, key=lambda c: order[c["section"]])):
@@ -181,8 +187,41 @@ def interpret_event(db, event) -> dict:
         db.add_claim(interpretation_id=interp_id, ordinal=n, section=c["section"], text=c["text"],
                      evidence_level=c["evidence"], formula=c["formula"], citations=cites)
     db.commit()
-    return {"slug": event["slug"], "ok": True, "model": res.model, "kept": len(report.kept), "total": report.total,
-            "cost_usd": res.cost_usd, "dropped": drop_reasons}
+    return {"slug": event["slug"], "ok": True, "model": model, "kept": len(report.kept), "total": report.total,
+            "cost_usd": cost_usd, "dropped": drop_reasons}
+
+
+def regate(db) -> list[dict]:
+    """闸门规则改进后，对每个事件最近一次成功生成的原始输出重新过闸门并替换解读。不调用模型。
+    只处理和当前提示词版本相同的输出（输入段落 ID 要能对上）。"""
+    out = []
+    logs = db.q("""SELECT g.* FROM generation_log g WHERE g.ok=1 AND g.raw_output IS NOT NULL AND g.prompt_version=?
+                   AND g.id = (SELECT MAX(id) FROM generation_log g2 WHERE g2.event_id=g.event_id AND g2.ok=1
+                               AND g2.prompt_version=?)""", (config.PROMPT_VERSION, config.PROMPT_VERSION))
+    for g in logs:
+        event = db.one("SELECT * FROM event WHERE id=?", (g["event_id"],))
+        _, ids, doc_dates = build_input(db, event)
+        obj = llm.parse_json(g["raw_output"])
+        report = gates.run_gates(obj, ids, doc_dates)
+        if not report.schema_ok:
+            continue
+        prev = db.one("""SELECT * FROM interpretation WHERE event_id=? ORDER BY generated_at DESC, id DESC LIMIT 1""",
+                      (event["id"],))
+        prev_meta = json.loads(prev["sections"] or "{}") if prev else {}
+        prev_kept = json.loads(prev["stats"] or "{}").get("claims_kept") if prev else None
+        if prev and prev_kept == len(report.kept):
+            continue
+        if prev:
+            db.conn.execute("UPDATE interpretation SET status='superseded' WHERE event_id=? AND status IN ('ok','discarded')",
+                            (event["id"],))
+        db.conn.execute("UPDATE generation_log SET claims_kept=?, drop_reasons=? WHERE id=?",
+                        (len(report.kept), json.dumps([{"text": d["claim"].get("text"), "reason": d["reason"]}
+                                                       for d in report.dropped], ensure_ascii=False), g["id"]))
+        r = _store(db, event, ids, obj, report, g["model_name"], prev_meta.get("requested_model", g["model_name"]),
+                   prev_meta.get("backend", "claude_cli"), g["cost_usd"], generated_at=g["finished_at"])
+        r["before"] = prev_kept
+        out.append(r)
+    return out
 
 
 def _now() -> str:

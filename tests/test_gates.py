@@ -89,3 +89,7 @@ def test_mixed_batch_counts():
 def test_formula_constants_allowed():
     cites = (("P2", "3-3/4 to 4 percent"),)
     assert run(claim("新目标区间中点为 3.875%", evidence="E2", cites=cites, formula="(3.75 + 4) / 2 = 3.875")).kept
+
+
+def test_unicode_hyphen_fraction():
+    assert extract_numbers("3\u20111/2 to 3\u20113/4 percent") == [3.5, 3.75]

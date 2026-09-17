@@ -15,7 +15,7 @@
 | 事件卡：可信度、等级、范围四维度、信源条、四段解读、溯源角标 | 「被低估」栏与 GDELT 覆盖度（第 2 版） |
 | 三道校验闸门：格式 / 逐字引文 / 数字回填 | 本地 cross-encoder 蕴含判定（用逐字引文代替） |
 | 今日流、事件卡、归档搜索三页，静态站 | 访问控制（目前公开发布，页面 noindex + robots Disallow） |
-| launchd 每日定时，失败不发布 | |
+| launchd 每日定时，失败不发布 | FOMC 会议纪要全文（新闻稿只是通知，第 1 版这类事件没有解读） |
 
 ## 跑起来
 
@@ -34,6 +34,7 @@ uv venv && uv pip install -e ".[dev]"
 | `python -m newsdesk fetch` | 抓全部源（`--only fed,stats_cn` 只抓部分） |
 | `python -m newsdesk events` | L1 文档 → 事件，范围打分、分级、挂媒体报道、判转载 |
 | `python -m newsdesk interpret` | 给还没有解读的事件生成解读并过闸门（`--slug` 指定，`--force` 重做） |
+| `python -m newsdesk regate` | 闸门规则改进后，用库里存的模型原始输出重新过闸门，不调模型 |
 | `python -m newsdesk build` | 生成静态站到 `site/`（先写到 `site.tmp/`，成功才替换） |
 | `python -m newsdesk publish` | 把 `site/` 推到 `gh-pages` 分支 |
 | `python -m newsdesk stats` | 各表行数与闸门通过率 |

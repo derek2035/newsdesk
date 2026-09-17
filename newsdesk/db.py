@@ -260,12 +260,12 @@ class DB:
 
     def add_interpretation(self, *, event_id: int, model_name: str, model_version: str | None,
                            prompt_version: str, author: str | None, status: str,
-                           sections: dict, stats: dict | None = None) -> int:
+                           sections: dict, stats: dict | None = None, generated_at: str | None = None) -> int:
         cur = self.conn.execute(
             """INSERT INTO interpretation(event_id,model_name,model_version,prompt_version,generated_at,
                                           author,status,sections,stats)
                VALUES(?,?,?,?,?,?,?,?,?)""",
-            (event_id, model_name, model_version, prompt_version, now_iso(), author, status,
+            (event_id, model_name, model_version, prompt_version, generated_at or now_iso(), author, status,
              json.dumps(sections, ensure_ascii=False), json.dumps(stats, ensure_ascii=False) if stats else None),
         )
         return cur.lastrowid
