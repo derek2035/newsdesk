@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>方法 · newsdesk</title>
+<meta name="description" content="自动聚合官方文件与媒体报道，给重要事件配有据可查的 AI 解读。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+<link rel="stylesheet" href="static/style.css">
+</head>
+<body data-page="about">
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="index.html"><span class="brand-mark">nd</span><span class="brand-name">newsdesk</span><span class="brand-sub">资讯解读</span></a>
+    <nav class="nav">
+      <a href="index.html" >今日</a>
+      <a href="archive.html" >归档</a>
+      <a href="about.html" aria-current="page">方法</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+<section class="page-head">
+  <h1>方法</h1>
+  <p class="lede">这个站每天自动跑一次：抓官方文件和媒体标题，生成事件卡，给事件配有据可查的解读。下面说明每一步怎么做、哪里还做不到。</p>
+</section>
+
+<section class="prose">
+  <h2>信源</h2>
+  <table class="tbl">
+    <thead><tr><th>信源</th><th>层级</th><th>语言</th><th>展示</th></tr></thead>
+    <tbody>
+      <tr><td><a href="https://www.federalreserve.gov/" rel="noopener" target="_blank">美联储 (Federal Reserve)</a></td>
+          <td>官方原文</td><td>英</td>
+          <td>全文，作为证据</td></tr>
+      <tr><td><a href="https://www.gov.cn/zhengce/" rel="noopener" target="_blank">中国政府网 · 最新政策</a></td>
+          <td>官方原文</td><td>中</td>
+          <td>全文，作为证据</td></tr>
+      <tr><td><a href="https://www.stats.gov.cn/" rel="noopener" target="_blank">国家统计局</a></td>
+          <td>官方原文</td><td>中</td>
+          <td>全文，作为证据</td></tr>
+      <tr><td>Al Jazeera</td>
+          <td>媒体</td><td>英</td>
+          <td>仅标题与链接</td></tr>
+      <tr><td>BBC Business</td>
+          <td>媒体</td><td>英</td>
+          <td>仅标题与链接</td></tr>
+      <tr><td>CNBC Finance</td>
+          <td>媒体</td><td>英</td>
+          <td>仅标题与链接</td></tr>
+      <tr><td>The Economist · Finance</td>
+          <td>媒体</td><td>英</td>
+          <td>仅标题与链接</td></tr>
+      <tr><td>The Guardian Business</td>
+          <td>媒体</td><td>英</td>
+          <td>仅标题与链接</td></tr>
+      <tr><td>界面新闻</td>
+          <td>媒体</td><td>中</td>
+          <td>仅标题与链接</td></tr>
+      <tr><td>手工补录</td>
+          <td>媒体</td><td>中</td>
+          <td>仅标题与链接</td></tr>
+      <tr><td>MarketWatch</td>
+          <td>媒体</td><td>英</td>
+          <td>仅标题与链接</td></tr>
+      <tr><td>NYT Business</td>
+          <td>媒体</td><td>英</td>
+          <td>仅标题与链接</td></tr>
+    </tbody>
+  </table>
+  <p>媒体报道只存标题、时间和链接，不存正文。抓取遵守各站 robots.txt：人民银行、BLS API 的 robots.txt 禁止抓取，所以没有接入。</p>
+
+  <h2>分级</h2>
+  <p>等级只决定这条事件值得花多少算力，不是「有多重要」的结论。阈值故意偏低，等级只升不降。</p>
+  <table class="tbl">
+    <thead><tr><th>等级</th><th>模型</th></tr></thead>
+    <tbody><tr><td>A+</td><td><code>claude-fable-5-1</code></td></tr><tr><td>A</td><td><code>claude-fable-5-1</code></td></tr><tr><td>B</td><td><code>claude-opus-5</code></td></tr><tr><td>C</td><td><code>claude-sonnet-5</code></td></tr></tbody>
+  </table>
+  <p>模型不可用时自动降级，卡片署名写实际使用的模型。未达 C 级的事件只存标题、不生成解读，折叠在每天的末尾。</p>
+
+  <h2>解读的四段</h2>
+  <ol>
+    <li><b>发生了什么</b>：一句话事实</li>
+    <li><b>变了什么</b>：相对上一版文件的条文级改动</li>
+    <li><b>量级锚定</b>：占比、倍数、差值，只用原文里的数字算</li>
+    <li><b>各源差异</b>：媒体标题和官方原文不一致的地方，没有就说一致</li>
+  </ol>
+  <p>每条结论标 <span class="ev ev-e1">E1</span>（直接来自原文）或 <span class="ev ev-e2">E2</span>（由原文数字经公式算出，可展开公式）。不做预测，不给投资建议。</p>
+
+  <h2>三道校验闸门</h2>
+  <ol>
+    <li><b>格式</b>：必须是合法 JSON，字段齐全，证据等级只能是 E1 或 E2。</li>
+    <li><b>引用</b>：每条引用的原文片段必须逐字出现在它声称的段落里，找不到就断开。一条引用都不剩的结论整条丢弃。</li>
+    <li><b>数字回填</b>：结论里的每个数字必须在所引段落中出现（允许百分点与基点换算），或者是 E2 公式的结果；公式本身要算得对，操作数也要来自原文。</li>
+  </ol>
+  <p>累计：模型共提出 39 条结论，通过 29 条（74%）。</p>
+
+  <h2>已知局限（第 1 版）</h2>
+  <ul>
+    <li>没有跨源聚类：每份官方文件就是一个事件，媒体报道靠关键词和时间窗挂接，可能挂上会前预热稿。</li>
+    <li>引用校验用「逐字引文」代替语义蕴含判定：能挡住编造的引文，挡不住引文真实但结论曲解的情况。</li>
+    <li>影响范围的持续时间都是估计值；政策文件还没有范围解析器，行业和经济规模显示「未知」。</li>
+    <li>还没有「被低估」栏：它需要覆盖度数据（GDELT），放在第 2 版。</li>
+  </ul>
+</section>
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>每条 AI 结论都标注模型与生成时间，并可点回官方原文。媒体报道只展示标题与链接。不构成投资建议。</p>
+    <p class="muted">站点生成于 2026-09-17 23:19（北京时间）</p>
+  </div>
+</footer>
+</body>
+</html>
