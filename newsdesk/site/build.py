@@ -218,6 +218,8 @@ def build_site(db, out_dir: Path) -> Path:
     index = [{"slug": e["slug"], "title": e["title"], "grade": e["grade"], "type": e["event_type"],
               "type_label": e["event_type_label"], "date": e["date"], "time": e["time"],
               "sources": e["sources_list"],
+              "primary_source": next((d["source"] for d in e["official"] if d["role"] == "primary"), ""),
+              "media_count": len(e["media"]),
               "summary": e["interpretation"]["one_line"]["text"] if e["interpretation"] and
               e["interpretation"]["one_line"] else "",
               "has_interp": bool(e["interpretation"])} for e in events]

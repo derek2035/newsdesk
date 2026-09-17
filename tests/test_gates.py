@@ -84,3 +84,8 @@ def test_headline_citation():
 def test_mixed_batch_counts():
     rep = run(claim("上调 25 个基点"), claim("上调 50 个基点"))
     assert (len(rep.kept), len(rep.dropped)) == (1, 1)
+
+
+def test_formula_constants_allowed():
+    cites = (("P2", "3-3/4 to 4 percent"),)
+    assert run(claim("新目标区间中点为 3.875%", evidence="E2", cites=cites, formula="(3.75 + 4) / 2 = 3.875")).kept

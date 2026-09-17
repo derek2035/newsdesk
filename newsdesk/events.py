@@ -84,6 +84,8 @@ def _media_matches(db, doc, keyword_groups: list[list[str]]):
 
 
 def _kw_hit(keyword: str, title_lower: str) -> bool:
+    if keyword == "<月份>":
+        return re.search(r"\d{1,2}月", title_lower) is not None
     k = keyword.lower()
     if re.fullmatch(r"[a-z][a-z\- ]*", k):  # 英文词按词边界匹配，避免 fed 命中 federal/fedex
         return re.search(rf"\b{re.escape(k)}\b", title_lower) is not None

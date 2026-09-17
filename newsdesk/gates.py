@@ -28,6 +28,7 @@ _WORDS = {w: i for i, w in enumerate(
      "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"])}
 _CN_DIGITS = {"两": 2, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10}
 _CN_UNIT = "年个次倍位名人项条月天周季"
+FORMULA_CONSTANTS = {2.0, 100.0}  # 公式里允许的常数：求中点 ÷2、换算百分比 ×100
 
 
 @dataclass
@@ -187,7 +188,7 @@ def run_gates(obj, passages: dict[str, str], doc_dates: set[str] | None = None) 
             have = set()
             for n in extract_numbers(cited_text) + list(implicit):
                 have |= number_variants(n)
-            missing_ops = [o for o in operands if not (number_variants(o) & have)]
+            missing_ops = [o for o in operands if o not in FORMULA_CONSTANTS and not (number_variants(o) & have)]
             if missing_ops:
                 rep.dropped.append({"claim": c, "reason": f"formula operands not in cited passages: {missing_ops}"})
                 continue

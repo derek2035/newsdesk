@@ -18,8 +18,8 @@ from .normalize import _to_float
 # ---- 参考常量（来源写在旁边，更新时改这里） -------------------------------
 US_POPULATION = 342_909_000          # FRED POPTHM，2026-07
 US_GDP_USD = 32_486.066e9            # FRED GDP，2026Q2 年化名义值
-CN_POPULATION = 1_408_280_000        # 国家统计局《2024 年国民经济和社会发展统计公报》，2024 年末
-CN_GDP_USD = 134_908.4e9 / 7.1       # 同上，2024 年 GDP 134.9084 万亿元，按 7.1 折美元（估算）
+CN_POPULATION = 1_404_890_000        # 国家统计局《2025 年国民经济和社会发展统计公报》：年末全国人口 140489 万人
+CN_GDP_USD = 1_401_879e8 / 6.7080    # 同上：2025 年 GDP 1401879 亿元；按 FRED DEXCHUS 2026-09-11 汇率 6.7080 折美元
 ALL_SECTORS = 11                     # GICS 一级行业数
 
 
@@ -88,11 +88,23 @@ def resolve_fomc_statement(passages: list[str]) -> Resolution:
     )
 
 
+_EN_MONTHS = {m: i + 1 for i, m in enumerate(["January", "February", "March", "April", "May", "June", "July", "August",
+                                               "September", "October", "November", "December"])}
+
+
+def zh_meeting_date(s: str) -> str:
+    """「July 28–29, 2026」→「2026年7月28–29日」；解析不了原样返回。"""
+    m = re.fullmatch(r"([A-Z][a-z]+) (\d{1,2})\s*[–-]\s*(\d{1,2}), (\d{4})", s.strip())
+    if m and m.group(1) in _EN_MONTHS:
+        return f"{m.group(4)}年{_EN_MONTHS[m.group(1)]}月{m.group(2)}–{m.group(3)}日"
+    return s
+
+
 def resolve_fed_other(doc_type: str, title: str) -> Resolution:
     if doc_type == "fomc_minutes":
         return Resolution(event_type="central_bank_minutes", grade="C",
-                          title="美联储公布 " + re.sub(r"^Minutes of the Federal Open Market Committee,\s*", "", title)
-                          + " FOMC 会议纪要",
+                          title="美联储公布 " + zh_meeting_date(
+                              re.sub(r"^Minutes of the Federal Open Market Committee,\s*", "", title)) + " FOMC 会议纪要",
                           population=US_POPULATION, industries=ALL_SECTORS, econ_scale=US_GDP_USD,
                           duration_months=1.5,
                           notes={"duration": "估计值：纪要影响到下次会议"},
@@ -118,7 +130,7 @@ STATS_KEY_SERIES = {
     "商品住宅销售价格": (["房价", "home prices", "house prices", "新房"], "C"),
     "能源生产": (["能源生产", "发电量", "energy output", "power generation"], "C"),
 }
-CHINA_KEYS = ["china", "chinese", "beijing", "中国", "国家统计局", "统计局", "8月", "1—8月", "前8个月"]
+CHINA_KEYS = ["china", "chinese", "beijing", "中国", "国家统计局", "统计局", "国内", "<月份>"]  # <月份> 匹配「8月」「1—8月」
 
 
 def resolve_stats(title: str) -> Resolution:
@@ -131,9 +143,9 @@ def resolve_stats(title: str) -> Resolution:
                 event_type="econ_data_release", grade=grade, title=f"国家统计局：{title}",
                 population=CN_POPULATION, industries=ALL_SECTORS if grade == "B" else 3,
                 econ_scale=CN_GDP_USD, duration_months=1,
-                notes={"population": "中国人口（国家统计局 2024 年末）",
+                notes={"population": "中国人口（国家统计局 2025 年统计公报，年末 14.05 亿）",
                        "industries": "综合性数据按 11 个一级行业；分项数据保守按 3 个计",
-                       "econ_scale": "中国 GDP（2024 年，按 7.1 折美元，估算）",
+                       "econ_scale": "中国 GDP（2025 年 140.19 万亿元，按 6.708 折美元）",
                        "duration": "估计值：影响到下一期数据发布，约 1 个月"},
                 media_keywords=[CHINA_KEYS, kws])
     return Resolution(event_type="econ_data_release", grade="C", title=f"国家统计局：{title}",
