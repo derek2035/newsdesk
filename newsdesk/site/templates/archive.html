@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}归档 · newsdesk{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>归档</h1>
+  <p class="lede">搜标题与一句话事实，按时间、等级、类型、信源筛选。</p>
+</section>
+<form class="filters" id="filters" onsubmit="return false">
+  <input type="search" id="q" placeholder="搜索，例如：加息、CPI、条例" aria-label="搜索" autocomplete="off">
+  <div class="filter-row">
+    <label>从 <input type="date" id="from"></label>
+    <label>到 <input type="date" id="to"></label>
+    <label>等级 <select id="grade"><option value="">全部</option><option>A+</option><option>A</option><option>B</option><option>C</option><option value="below">未达 C</option></select></label>
+    <label>类型 <select id="type"><option value="">全部</option>{% for k, v in types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+    <label>信源 <select id="source"><option value="">全部</option></select></label>
+  </div>
+</form>
+<p class="result-count muted" id="count"></p>
+<ol class="archive-list" id="results"></ol>
+{% endblock %}
+{% block scripts %}<script src="{{ root }}static/archive.js" defer></script>{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import event_row %}
+{% block content %}
+<section class="page-head">
+  <h1>今日</h1>
+  <p class="lede">官方文件、经济数据与政策原文，按发布时间排列。每条都能点开看来源、影响范围与有据可查的解读。</p>
+</section>
+
+{% if not days %}
+<p class="empty">最近 14 天没有新事件。</p>
+{% endif %}
+
+{% for day in days %}
+<section class="day">
+  <h2 class="day-head"><span>{{ day.date }}</span>{% if day.is_today %}<span class="today-tag">今天</span>{% endif %}<span class="day-count">{{ day.events|length }} 条</span></h2>
+  {% for ev in day.events %}
+    {{ event_row(ev, root) }}
+  {% endfor %}
+  {% if day.below %}
+  <details class="below">
+    <summary>当日未达 C 级 {{ day.below|length }} 条（仅标题）</summary>
+    <ul>
+      {% for ev in day.below %}
+      <li><time>{{ ev.time[11:] }}</time> {{ ev.title }}{% for d in ev.official if d.role == 'primary' %} · <a href="{{ d.url }}" rel="noopener" target="_blank">原文</a>{% endfor %}</li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

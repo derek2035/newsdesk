@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>{% block title %}{{ site_title }}{% endblock %}</title>
+<meta name="description" content="{% block description %}自动聚合官方文件与媒体报道，给重要事件配有据可查的 AI 解读。{% endblock %}">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+<link rel="stylesheet" href="{{ root }}static/style.css">
+</head>
+<body data-page="{{ page }}">
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="{{ root }}index.html"><span class="brand-mark">nd</span><span class="brand-name">newsdesk</span><span class="brand-sub">资讯解读</span></a>
+    <nav class="nav">
+      <a href="{{ root }}index.html" {% if page == 'index' %}aria-current="page"{% endif %}>今日</a>
+      <a href="{{ root }}archive.html" {% if page == 'archive' %}aria-current="page"{% endif %}>归档</a>
+      <a href="{{ root }}about.html" {% if page == 'about' %}aria-current="page"{% endif %}>方法</a>
+    </nav>
+  </div>
+</header>
+<main class="wrap">
+{% block content %}{% endblock %}
+</main>
+<footer class="site-footer">
+  <div class="wrap">
+    <p>每条 AI 结论都标注模型与生成时间，并可点回官方原文。媒体报道只展示标题与链接。不构成投资建议。</p>
+    <p class="muted">站点生成于 {{ built_at }}（北京时间）</p>
+  </div>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

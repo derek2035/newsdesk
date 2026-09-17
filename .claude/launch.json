@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "site",
+      "runtimeExecutable": "/Users/derek/code/newsdesk/.venv/bin/python",
+      "runtimeArgs": ["-m", "http.server", "18321", "-d", "/Users/derek/code/newsdesk/site"],
+      "port": 18321
+    }
+  ]
+}

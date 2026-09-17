@@ -1,0 +1,35 @@
+{% macro grade_badge(grade) -%}
+<span class="grade grade-{{ grade|replace('+','plus') }}" title="等级决定解读用的算力档位，不是重要性结论">{{ grade }}</span>
+{%- endmacro %}
+
+{% macro cred_badge(ev) -%}
+<span class="cred cred-{{ ev.credibility }}">{{ ev.credibility_label }}</span>
+{%- endmacro %}
+
+{% macro doc_title(d) -%}
+<span class="doc-title" lang="{{ d.lang or 'zh' }}">{{ d.title }}</span>
+{% if d.lang == 'en' and d.title_zh %}<span class="doc-title-zh">{{ d.title_zh }}<span class="mt-tag" title="机器翻译：{{ d.mt_model }}">机器翻译</span></span>{% endif %}
+{%- endmacro %}
+
+{% macro event_row(ev, root) -%}
+<article class="row{% if ev.grade == 'C' %} row-c{% endif %}">
+  <div class="row-meta">
+    <time>{{ ev.time[11:] }}</time>
+    {{ grade_badge(ev.grade) }}
+  </div>
+  <div class="row-body">
+    <h3 class="row-title"><a href="{{ root }}events/{{ ev.slug }}.html">{{ ev.title }}</a></h3>
+    {% if ev.interpretation and ev.interpretation.one_line %}
+    <p class="row-fact"><span class="ai-dot" title="AI 生成：{{ ev.interpretation.model }}">AI</span>{{ ev.interpretation.one_line.text }}</p>
+    {% elif not ev.interpretation %}
+    <p class="row-fact muted">暂无解读</p>
+    {% endif %}
+    <p class="row-sources">
+      <span class="type-chip">{{ ev.event_type_label }}</span>
+      {% for d in ev.official if d.role == 'primary' %}<span>{{ d.source }}</span>{% endfor %}
+      {% if ev.media %}<span>· {{ ev.media|length }} 家独立报道</span>{% endif %}
+      {% if ev.reprints %}<span class="muted">· 另有 {{ ev.reprints|length }} 家转载</span>{% endif %}
+    </p>
+  </div>
+</article>
+{%- endmacro %}

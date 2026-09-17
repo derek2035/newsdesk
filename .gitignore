@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+/site/
+/site.tmp/
+/build/
+.pytest_cache/
+logs/
+.env
+.DS_Store
+# SQLite 库随 git 备份（文档要求原始数据全存）；日志与 WAL 临时文件不进
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+data/model_unavailable.json
