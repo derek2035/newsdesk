@@ -93,3 +93,9 @@ def test_formula_constants_allowed():
 
 def test_unicode_hyphen_fraction():
     assert extract_numbers("3\u20111/2 to 3\u20113/4 percent") == [3.5, 3.75]
+
+
+def test_parse_json_repairs_unescaped_cjk_quotes():
+    from newsdesk.llm import parse_json
+    raw = '```json\n{"claims": [{"text": "印发《服务和保障"十五五"规划》"}]}\n```'
+    assert parse_json(raw)["claims"][0]["text"] == '印发《服务和保障"十五五"规划》'

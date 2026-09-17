@@ -195,13 +195,17 @@ def regate(db) -> list[dict]:
     """闸门规则改进后，对每个事件最近一次成功生成的原始输出重新过闸门并替换解读。不调用模型。
     只处理和当前提示词版本相同的输出（输入段落 ID 要能对上）。"""
     out = []
-    logs = db.q("""SELECT g.* FROM generation_log g WHERE g.ok=1 AND g.raw_output IS NOT NULL AND g.prompt_version=?
-                   AND g.id = (SELECT MAX(id) FROM generation_log g2 WHERE g2.event_id=g.event_id AND g2.ok=1
-                               AND g2.prompt_version=?)""", (config.PROMPT_VERSION, config.PROMPT_VERSION))
+    logs = db.q("""SELECT g.* FROM generation_log g WHERE g.raw_output IS NOT NULL AND g.prompt_version=?
+                   AND g.id = (SELECT MAX(id) FROM generation_log g2 WHERE g2.event_id=g.event_id
+                               AND g2.raw_output IS NOT NULL AND g2.prompt_version=?)""",
+                (config.PROMPT_VERSION, config.PROMPT_VERSION))
     for g in logs:
         event = db.one("SELECT * FROM event WHERE id=?", (g["event_id"],))
         _, ids, doc_dates = build_input(db, event)
-        obj = llm.parse_json(g["raw_output"])
+        try:
+            obj = llm.parse_json(g["raw_output"])
+        except (ValueError, json.JSONDecodeError):
+            continue
         report = gates.run_gates(obj, ids, doc_dates)
         if not report.schema_ok:
             continue
@@ -214,8 +218,8 @@ def regate(db) -> list[dict]:
         if prev:
             db.conn.execute("UPDATE interpretation SET status='superseded' WHERE event_id=? AND status IN ('ok','discarded')",
                             (event["id"],))
-        db.conn.execute("UPDATE generation_log SET claims_kept=?, drop_reasons=? WHERE id=?",
-                        (len(report.kept), json.dumps([{"text": d["claim"].get("text"), "reason": d["reason"]}
+        db.conn.execute("UPDATE generation_log SET ok=1, claims_total=?, claims_kept=?, drop_reasons=? WHERE id=?",
+                        (report.total, len(report.kept), json.dumps([{"text": d["claim"].get("text"), "reason": d["reason"]}
                                                        for d in report.dropped], ensure_ascii=False), g["id"]))
         r = _store(db, event, ids, obj, report, g["model_name"], prev_meta.get("requested_model", g["model_name"]),
                    prev_meta.get("backend", "claude_cli"), g["cost_usd"], generated_at=g["finished_at"])

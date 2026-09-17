@@ -130,4 +130,12 @@ def parse_json(text: str) -> dict:
     i, j = t.find("{"), t.rfind("}")
     if i < 0 or j < i:
         raise ValueError("no JSON object in model output")
-    return json.loads(t[i: j + 1])
+    body = t[i: j + 1]
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError:
+        # 常见失误：中文里的引号「“十五五”」被写成未转义的 ASCII 双引号。
+        # 只修复紧贴中文字符 / 书名号的引号，修不好就照常抛错，交给 schema 闸门丢弃。
+        cjk = r"[\u4e00-\u9fff《》（）、，。：；0-9]"
+        repaired = re.sub(rf'(?<={cjk})"(?={cjk})', '\\"', body)
+        return json.loads(repaired)
