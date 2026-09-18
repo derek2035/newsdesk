@@ -1,6 +1,11 @@
-# 模型调用的非机密配置。密钥不写在这里：运行时从你的 shell 环境读取
-# （ANTHROPIC_API_KEY，或 ANTHROPIC_AUTH_TOKEN——两者等价，会被当作 key 传给 CLI）。
+# 模型调用的非机密配置。密钥不写在这里。
 #
-# base_url 是你在用的推理网关地址。留空则用环境变量里的 ANTHROPIC_BASE_URL。
-# 注意：令牌必须和网关匹配；把网关换成 api.anthropic.com 而令牌是网关签发的，会全部 401。
+# auth_mode:
+#   auto    （默认）先用本机 claude 的登录态，认证失败自动回退到网关 key
+#   login   只用本机 claude 登录态（和交互式 claude 一样）
+#   gateway 只用 shell 里的 ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN + 下面的 base_url，走 --bare
+auth_mode: auto
+
+# 网关地址，仅 gateway 方式使用。留空则取环境变量 ANTHROPIC_BASE_URL。
+# 注意：令牌必须和网关匹配——网关签发的令牌指向 api.anthropic.com 会全部 401（2026-09-18 踩过）。
 base_url: https://api.ppxsh.com

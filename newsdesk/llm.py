@@ -55,33 +55,13 @@ def login_shell_credentials() -> dict[str, str]:
     return _login_creds
 
 
-def child_env() -> dict[str, str]:
-    """给 `claude -p --bare` 用的环境。
-
-    --bare 只认 ANTHROPIC_API_KEY（不读钥匙串、不弹自定义密钥确认），所以把用户的
-    AUTH_TOKEN 也按 key 传入；网关地址取项目配置，配置没写才用环境里的。
-    令牌只在进程内传递，不写文件、不记日志。
-    """
-    from . import config
-    env = {k: v for k, v in os.environ.items() if k not in _SESSION_ENV}
-    creds = login_shell_credentials()
-    key = creds.get("ANTHROPIC_API_KEY") or creds.get("ANTHROPIC_AUTH_TOKEN")
-    for v in _CRED_VARS:
-        env.pop(v, None)
-    if key:
-        env["ANTHROPIC_API_KEY"] = key
-    base = config.LLM_BASE_URL or creds.get("ANTHROPIC_BASE_URL")
-    if base:
-        env["ANTHROPIC_BASE_URL"] = base
-    return env
-
-
 UNAVAILABLE_TTL = 24 * 3600
 _UNAVAILABLE_FILE = os.environ.get("NEWSDESK_UNAVAILABLE_FILE",
                                    os.path.join(os.path.dirname(__file__), "..", "data", "model_unavailable.json"))
 
 
 def _load_unavailable() -> dict[str, float]:
+    """某个模型在网关上没有通道时，24 小时内不再浪费时间去试。"""
     try:
         with open(_UNAVAILABLE_FILE, encoding="utf-8") as f:
             data = json.load(f)
@@ -98,6 +78,43 @@ def _mark_unavailable(model: str) -> None:
             json.dump(data, f)
     except OSError:
         pass
+
+
+AUTH_MODES = ("login", "gateway")
+_auth_order: list[str] | None = None
+
+
+def auth_modes() -> list[str]:
+    """认证方式的尝试顺序。
+
+    login   ：用本机 claude 的登录态（钥匙串），也就是交互式 claude 用的那套
+    gateway ：用 shell 里的 ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN + config/llm.yaml 的网关地址，
+              走 `--bare`（不读钥匙串、不弹自定义密钥确认），定时任务更稳
+    配置 auth_mode: auto（默认）时两种都试，谁先成功用谁；某一种挂了会自动换另一种。
+    """
+    from . import config
+    mode = (config.LLM_AUTH_MODE or "auto").lower()
+    if mode in AUTH_MODES:
+        return [mode]
+    return ["login", "gateway"]
+
+
+def child_env(mode: str) -> dict[str, str]:
+    """给子进程用的环境。令牌只在进程内传递，不写文件、不记日志。"""
+    from . import config
+    env = {k: v for k, v in os.environ.items() if k not in _SESSION_ENV}
+    for v in _CRED_VARS:
+        env.pop(v, None)        # 先清掉本会话注入的临时凭据
+    if mode == "login":
+        return env              # 什么都不给，claude 用本机登录态
+    creds = login_shell_credentials()
+    key = creds.get("ANTHROPIC_API_KEY") or creds.get("ANTHROPIC_AUTH_TOKEN")
+    if key:
+        env["ANTHROPIC_API_KEY"] = key
+    base = config.LLM_BASE_URL or creds.get("ANTHROPIC_BASE_URL")
+    if base:
+        env["ANTHROPIC_BASE_URL"] = base
+    return env
 
 
 class LLMError(Exception):
@@ -127,11 +144,13 @@ def _call_anthropic(model: str, system: str, prompt: str, max_tokens: int) -> LL
     return LLMResult(text=text, model=msg.model, cost_usd=None, backend="anthropic", requested_model=model)
 
 
-def _call_cli(model: str, system: str, prompt: str) -> LLMResult:
-    env = child_env()
-    # --bare：跳过 CLAUDE.md 发现、钩子、插件，认证严格走 ANTHROPIC_API_KEY —— 定时任务要的就是这种纯函数调用
-    cmd = ["claude", "-p", prompt, "--model", model, "--output-format", "json", "--bare", "--tools", "",
+def _call_cli(model: str, system: str, prompt: str, mode: str = "login") -> LLMResult:
+    env = child_env(mode)
+    cmd = ["claude", "-p", prompt, "--model", model, "--output-format", "json", "--tools", "",
            "--system-prompt", system, "--no-session-persistence"]
+    if mode == "gateway":
+        # --bare：跳过 CLAUDE.md 发现、钩子、插件，认证严格走 ANTHROPIC_API_KEY
+        cmd.append("--bare")
     with tempfile.TemporaryDirectory(prefix="newsdesk-llm-") as cwd:  # 空目录：不读任何 CLAUDE.md
         try:
             proc = subprocess.run(cmd, input="", capture_output=True, text=True, env=env, cwd=cwd,
@@ -149,6 +168,29 @@ def _call_cli(model: str, system: str, prompt: str) -> LLMResult:
                      backend="claude_cli", requested_model=model)
 
 
+AUTH_ERROR = re.compile(r"not logged in|401|unauthorized|invalid api key|authentication", re.I)
+
+
+def _call_cli_any_auth(model: str, system: str, prompt: str) -> LLMResult:
+    """认证方式按顺序试：本机登录态挂了就换网关 key，反之亦然。成功的那种记下来，本次运行里优先用。"""
+    global _auth_order
+    order = _auth_order or auth_modes()
+    errors = []
+    for mode in order:
+        try:
+            res = _call_cli(model, system, prompt, mode)
+            if _auth_order != [mode] + [m for m in order if m != mode]:
+                _auth_order = [mode] + [m for m in order if m != mode]
+                log.info("LLM 认证方式：%s", mode)
+            return res
+        except LLMError as e:
+            errors.append(str(e))
+            if not AUTH_ERROR.search(str(e)):
+                raise                      # 不是认证问题（比如模型不可用）就别换方式，交给上层降级
+            log.warning("认证方式 %s 不可用，换下一种：%s", mode, str(e)[:120])
+    raise LLMError(" | ".join(errors))
+
+
 def complete(model: str, system: str, prompt: str, max_tokens: int = 8000) -> LLMResult:
     """按降级链调用，直到有一个模型成功。"""
     chain = [model] + FALLBACKS.get(model, [])
@@ -161,7 +203,7 @@ def complete(model: str, system: str, prompt: str, max_tokens: int = 8000) -> LL
             if backend() == "anthropic":
                 res = _call_anthropic(m, system, prompt, max_tokens)
             else:
-                res = _call_cli(m, system, prompt)
+                res = _call_cli_any_auth(m, system, prompt)
             res.requested_model = model
             return res
         except Exception as e:  # noqa: BLE001

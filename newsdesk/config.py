@@ -34,6 +34,7 @@ def llm_settings() -> dict:
 
 
 LLM_BASE_URL = os.environ.get("NEWSDESK_LLM_BASE_URL") or (llm_settings().get("base_url") or "").strip() or None
+LLM_AUTH_MODE = os.environ.get("NEWSDESK_LLM_AUTH") or (llm_settings().get("auth_mode") or "auto").strip()
 
 
 def load_sources() -> list[dict]:

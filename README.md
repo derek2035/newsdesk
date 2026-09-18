@@ -68,9 +68,14 @@ cp launchd/com.derek.newsdesk.plist ~/Library/LaunchAgents/ && launchctl load ~/
 | C | `claude-sonnet-5` | |
 | 标题翻译 | `claude-haiku-4-5-20251001` | |
 
-- 设了 `ANTHROPIC_API_KEY`：走官方 SDK，temperature=0
-- 没设：走本机 `claude -p`（订阅额度），关掉工具、替换系统提示词、在空目录里运行。CLI 不支持 temperature，靠固定 schema 和校验闸门兜底。用订阅额度跑定时批处理是否符合使用条款，请自行确认
-- 不可用的模型会缓存 24 小时（`data/model_unavailable.json`），不会每次都白等超时
+调用方式（`config/llm.yaml` 的 `auth_mode`，默认 `auto`）：
+
+1. `login`：用本机 `claude` 的登录态，和交互式 claude 一样
+2. `gateway`：用 shell 里的 `ANTHROPIC_API_KEY` / `ANTHROPIC_AUTH_TOKEN` 加 `base_url`，走 `claude -p --bare`（不读钥匙串、不弹自定义密钥确认，定时任务更稳）
+
+`auto` 先试 1、认证失败自动换 2，成功的那种在本次运行里优先使用。密钥只从 shell 环境读取，不写文件、不进日志。注意令牌要和网关匹配：网关签发的令牌配 `api.anthropic.com` 会全部 401。
+
+其他：`NEWSDESK_LLM_BACKEND=anthropic` 可改走官方 SDK（temperature=0）。CLI 不支持 temperature，靠固定 schema 与校验闸门兜底；用订阅额度跑定时批处理是否符合使用条款，请自行确认。不可用的模型会缓存 24 小时（`data/model_unavailable.json`），不会每次都白等超时。
 
 改模型档位：`newsdesk/config.py` 的 `GRADE_MODELS`。
 
