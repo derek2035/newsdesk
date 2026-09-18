@@ -132,6 +132,7 @@ code { font-family: var(--mono); font-size: .88em; }
 .card-title { font-size: 30px; line-height: 1.32; margin: 14px 0 12px; letter-spacing: -.01em; }
 .block-title { font-size: 13px; font-weight: 600; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
 
+.title-original { margin: -6px 0 14px; font-size: 14px; color: var(--muted); }
 .fact-line { margin: 0 0 22px; font-size: 18px; line-height: 1.6; font-weight: 500; color: var(--ink); }
 
 /* 解读：页面主体，独立底色与边框，与原文区明确分离 */
