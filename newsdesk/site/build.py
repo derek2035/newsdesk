@@ -141,14 +141,28 @@ def materialize_event(db, ev) -> dict:
         }
         whats = sections.get("what") or []
         interpretation["one_line"] = whats[0] if whats else None
+        # 「发生了什么」如果只有这一句，就不再单列一节：它已经在页首
+        if interpretation["one_line"] and len(whats) == 1:
+            interpretation["sections"] = [s for s in interpretation["sections"] if s["key"] != "what"]
 
-    # 被引用的官方段落 → 页面底部「引用的原文」
-    cited_passages: dict[int, dict] = {}
-    for key, c in cites.items():
+    # 被引用的段落 → 原文里高亮
+    quotes_by_passage: dict[int, list[str]] = defaultdict(list)
+    for c in cites.values():
         if c["kind"] == "passage":
-            entry = cited_passages.setdefault(c["passage_id"], {**c, "keys": [], "quotes": []})
-            entry["keys"].append(key)
-            entry["quotes"].append(c["quote"])
+            quotes_by_passage[c["passage_id"]].append(c["quote"])
+
+    # 新闻内容：官方原文全文（L1 可全文展示），被引用处高亮
+    def doc_full(m):
+        view = doc_view(m)
+        view["passages"] = [{"id": p["id"], "label": p["label"], "text": p["text"],
+                             "quotes": quotes_by_passage.get(p["id"], [])}
+                            for p in db.passages_for(m["id"])]
+        view["cited_count"] = sum(1 for p in view["passages"] if p["quotes"])
+        return view
+
+    primary_doc = next((doc_full(m) for m in members if m["role"] == "primary"), None)
+    other_docs = [doc_full(m) for m in members if m["role"] in ("related", "prior")]
+    other_docs.sort(key=lambda d: (role_order[d["role"]], d["published_at"] or ""))
 
     notes = json.loads(scope["notes"] or "{}") if scope and scope["notes"] else {}
     return {
@@ -168,7 +182,7 @@ def materialize_event(db, ev) -> dict:
         "official": official, "media": media, "reprints": reprints,
         "sources_list": sorted({d["source"] for d in official + media}),
         "interpretation": interpretation, "cites": cites,
-        "cited_passages": sorted(cited_passages.values(), key=lambda c: c["passage_id"]),
+        "primary_doc": primary_doc, "other_docs": other_docs,
     }
 
 

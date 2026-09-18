@@ -3,74 +3,24 @@
 {% block title %}{{ ev.title }} · newsdesk{% endblock %}
 {% block description %}{{ ev.title }}{% endblock %}
 {% block content %}
-<article class="card {% if ev.grade == 'C' %}card-c{% endif %}" data-grade="{{ ev.grade }}">
+{% set it = ev.interpretation %}
+<article class="card" data-grade="{{ ev.grade }}">
 
-  {# 1. 可信度标 + 等级标 #}
-  <div class="card-badges">
-    {{ cred_badge(ev) }}
-    {{ grade_badge(ev.grade) }}
-    <span class="type-chip">{{ ev.event_type_label }}</span>
-    <time class="card-time">{{ ev.time }}</time>
-  </div>
-
-  {# 2. 中性标题 #}
-  <h1 class="card-title">{{ ev.title }}</h1>
-
-  {# 3. 影响范围条 #}
-  <section class="scope" aria-label="影响范围">
-    <div class="scope-item"><span class="scope-k">人口</span><span class="scope-v">{{ ev.scope.population }}</span></div>
-    <div class="scope-item"><span class="scope-k">行业</span><span class="scope-v">{{ ev.scope.industries }}</span></div>
-    <div class="scope-item"><span class="scope-k">经济规模</span><span class="scope-v">{{ ev.scope.econ_scale }}</span></div>
-    <div class="scope-item"><span class="scope-k">持续时间</span><span class="scope-v">{{ ev.scope.duration }}{% if ev.scope.duration_is_estimate and ev.scope.duration != '未知' %}<em class="est">估计</em>{% endif %}</span></div>
-    <details class="scope-notes">
-      <summary>范围分 {{ ev.scope.score if ev.scope.score is not none else '—' }} · 怎么算的</summary>
-      <p class="formula-line">score = log₁₀(人口) + log₁₀(持续月数) + log₁₀(行业数) + log₁₀(经济规模美元)，未知维度不计入</p>
-      <ul>{% for k, v in ev.scope.notes.items() if k != 'parsed' %}<li>{{ v }}</li>{% endfor %}</ul>
-    </details>
-  </section>
-
-  {# 4. 信源条：官方优先；独立报道永不折叠；转载单独收起 #}
-  <section class="sources" aria-label="信源">
-    <h2 class="block-title">信源</h2>
-    <ul class="src-list">
-      {% for d in ev.official %}
-      <li class="src src-official">
-        <span class="src-tag">{% if d.role == 'primary' %}官方原文{% elif d.role == 'related' %}官方附件{% else %}上一版{% endif %}</span>
-        <div class="src-main">
-          <a href="{{ d.url }}" rel="noopener" target="_blank">{{ doc_title(d) }}</a>
-          <span class="src-meta">{{ d.source }} · {{ d.time }}</span>
-        </div>
-      </li>
-      {% endfor %}
-      {% for d in ev.media %}
-      <li class="src src-media">
-        <span class="src-tag src-tag-media">报道</span>
-        <div class="src-main">
-          <a href="{{ d.url }}" rel="noopener" target="_blank">{{ doc_title(d) }}</a>
-          <span class="src-meta">{{ d.source }} · {{ d.time }}</span>
-        </div>
-      </li>
-      {% endfor %}
-    </ul>
-    {% if ev.reprints %}
-    <details class="reprints">
-      <summary>另有 {{ ev.reprints|length }} 家转载</summary>
-      <ul class="src-list">
-        {% for d in ev.reprints %}
-        <li class="src"><span class="src-tag src-tag-reprint">转载</span><div class="src-main"><a href="{{ d.url }}" rel="noopener" target="_blank">{{ doc_title(d) }}</a><span class="src-meta">{{ d.source }}{% if d.note %} · {{ d.note }}{% endif %}</span></div></li>
-        {% endfor %}
-      </ul>
-    </details>
+  {# 头部：可信度标 + 等级标 + 中性标题 + 一句话事实 #}
+  <header class="card-head">
+    <div class="card-badges">
+      {{ cred_badge(ev) }}
+      {{ grade_badge(ev.grade) }}
+      <span class="type-chip">{{ ev.event_type_label }}</span>
+      <time class="card-time">{{ ev.time }}</time>
+    </div>
+    <h1 class="card-title">{{ ev.title }}</h1>
+    {% if it and it.one_line %}
+    <p class="fact-line"><span class="ai-dot" title="AI 生成，见下方署名">AI</span>{{ it.one_line.text }}{% for r in it.one_line.refs %}<a class="cite" href="#p-{{ ev.cites[r.key].passage_id or 'news' }}" data-cite="{{ r.key }}">{{ r.n }}</a>{% endfor %}</p>
     {% endif %}
-  </section>
+  </header>
 
-  {% set it = ev.interpretation %}
-  {# 5. 一句话事实 #}
-  {% if it and it.one_line %}
-  <p class="fact-line"><span class="ai-dot" title="AI 生成，见下方署名">AI</span>{{ it.one_line.text }}{% for r in it.one_line.refs %}<a class="cite" href="#p-{{ ev.cites[r.key].passage_id or 'h' }}" data-cite="{{ r.key }}">{{ r.n }}</a>{% endfor %}</p>
-  {% endif %}
-
-  {# 6. AI 解读区块（带署名头），与事实区视觉隔离 #}
+  {# 一、解读：这一页的主体 #}
   {% if it %}
   <section class="ai-block" aria-label="AI 解读">
     <header class="ai-head">
@@ -78,19 +28,16 @@
       <span class="ai-sign">模型 <b>{{ it.model }}</b>{% if it.requested_model and it.requested_model != it.model %}（{{ it.requested_model }} 不可用，已降级）{% endif %} · 生成于 {{ it.generated_at }} · 提示词 {{ it.prompt_version }}</span>
       <span class="ai-gate">校验通过 {{ it.claims_kept }} / {{ it.claims_total }} 条结论，未通过的已丢弃</span>
     </header>
-    {% if ev.grade == 'C' %}<details class="c-fold"><summary>展开完整解读</summary>{% endif %}
     {% for sec in it.sections %}
     <div class="ai-sec">
-      <h3>{{ loop.index }}. {{ sec.title }}</h3>
-      {% set shown = sec.claims[1:] if sec.key == 'what' and it.one_line and ev.grade != 'C' else sec.claims %}
-      {% if sec.key == 'what' and not shown and it.one_line and ev.grade != 'C' %}
-      <p class="muted">见卡片上方的一句话事实。</p>
-      {% elif shown %}
+      <h2>{{ loop.index }}. {{ sec.title }}</h2>
+      {% set shown = sec.claims[1:] if sec.key == 'what' and it.one_line else sec.claims %}
+      {% if shown %}
       <ul class="claims">
         {% for c in shown %}
         <li class="claim">
           <span class="claim-text">{{ c.text }}</span>
-          {%- for r in c.refs %}<a class="cite" href="#{% if ev.cites[r.key].kind == 'passage' %}p-{{ ev.cites[r.key].passage_id }}{% else %}sources{% endif %}" data-cite="{{ r.key }}">{{ r.n }}</a>{% endfor %}
+          {%- for r in c.refs %}<a class="cite" href="#{% if ev.cites[r.key].kind == 'passage' %}p-{{ ev.cites[r.key].passage_id }}{% else %}news{% endif %}" data-cite="{{ r.key }}">{{ r.n }}</a>{% endfor %}
           <span class="ev ev-{{ c.evidence|lower }}" title="{% if c.evidence == 'E1' %}E1 直接数据：结论直接来自原文{% else %}E2 计算推导：由原文数字经公式算出{% endif %}">{{ c.evidence }}</span>
           {% if c.formula %}<details class="formula"><summary>公式</summary><code>{{ c.formula }}</code></details>{% endif %}
         </li>
@@ -107,24 +54,94 @@
       {% endif %}
     </div>
     {% endfor %}
-    {% if ev.grade == 'C' %}</details>{% endif %}
   </section>
   {% else %}
-  <section class="ai-block ai-empty"><header class="ai-head"><span class="ai-label">AI 解读</span></header><p>暂无解读</p></section>
+  <section class="ai-block ai-empty">
+    <header class="ai-head"><span class="ai-label">AI 解读</span></header>
+    <p>暂无解读。这条只保留原文与信源，不用模型硬凑。</p>
+  </section>
   {% endif %}
 
-  {# 7. 被引用的原文段落：角标点击跳到这里并高亮 #}
-  {% if ev.cited_passages %}
-  <section class="passages" aria-label="引用的原文">
-    <h2 class="block-title">引用的原文</h2>
-    {% for p in ev.cited_passages %}
-    <blockquote class="passage" id="p-{{ p.passage_id }}" data-quotes="{{ p.quotes|json_attr }}">
-      <p class="passage-text">{{ p.text }}</p>
-      <footer><a href="{{ p.url }}" rel="noopener" target="_blank">{{ p.source }} · {{ p.doc_title }}</a> <span class="muted">{{ p.date }} · {{ p.label }}</span></footer>
-    </blockquote>
+  {# 二、新闻内容：官方原文全文，解读引用过的地方高亮 #}
+  {% if ev.primary_doc %}
+  <section class="news" id="news" aria-label="新闻内容">
+    <h2 class="block-title">新闻内容 · 官方原文</h2>
+    <p class="news-meta">
+      <a href="{{ ev.primary_doc.url }}" rel="noopener" target="_blank">{{ ev.primary_doc.title }}</a>
+      {% if ev.primary_doc.lang == 'en' and ev.primary_doc.title_zh %}<span class="doc-title-zh">{{ ev.primary_doc.title_zh }}<span class="mt-tag" title="机器翻译：{{ ev.primary_doc.mt_model }}">机器翻译</span></span>{% endif %}
+      <span class="src-meta">{{ ev.primary_doc.source }} · {{ ev.primary_doc.time }}{% if ev.primary_doc.cited_count %} · 解读引用了其中 {{ ev.primary_doc.cited_count }} 段{% endif %}</span>
+    </p>
+    <div class="doc-body">
+      {% for p in ev.primary_doc.passages %}
+      <p class="passage{% if p.quotes %} passage-cited{% endif %}" id="p-{{ p.id }}" data-quotes="{{ p.quotes|json_attr }}">{{ p.text }}</p>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if ev.other_docs %}
+  <section class="more-docs" aria-label="相关文件">
+    {% for d in ev.other_docs %}
+    <details class="minor">
+      <summary>{% if d.role == 'related' %}附属文件{% else %}上一版文件{% endif %}：{{ d.title_zh or d.title }}{% if d.cited_count %}（解读引用了 {{ d.cited_count }} 段）{% endif %}</summary>
+      <p class="news-meta"><a href="{{ d.url }}" rel="noopener" target="_blank">{{ d.title }}</a> <span class="src-meta">{{ d.source }} · {{ d.time }}</span></p>
+      <div class="doc-body">
+        {% for p in d.passages %}
+        <p class="passage{% if p.quotes %} passage-cited{% endif %}" id="p-{{ p.id }}" data-quotes="{{ p.quotes|json_attr }}">{{ p.text }}</p>
+        {% endfor %}
+      </div>
+    </details>
     {% endfor %}
   </section>
   {% endif %}
+
+  {# 三、次要信息：默认收起 #}
+  <section class="secondary" aria-label="次要信息">
+    <details class="minor">
+      <summary>影响范围 · 范围分 {{ ev.scope.score if ev.scope.score is not none else '—' }}</summary>
+      <div class="scope">
+        <div class="scope-item"><span class="scope-k">人口</span><span class="scope-v">{{ ev.scope.population }}</span></div>
+        <div class="scope-item"><span class="scope-k">行业</span><span class="scope-v">{{ ev.scope.industries }}</span></div>
+        <div class="scope-item"><span class="scope-k">经济规模</span><span class="scope-v">{{ ev.scope.econ_scale }}</span></div>
+        <div class="scope-item"><span class="scope-k">持续时间</span><span class="scope-v">{{ ev.scope.duration }}{% if ev.scope.duration_is_estimate and ev.scope.duration != '未知' %}<em class="est">估计</em>{% endif %}</span></div>
+      </div>
+      <p class="formula-line">score = log₁₀(人口) + log₁₀(持续月数) + log₁₀(行业数) + log₁₀(经济规模美元)，未知维度不计入</p>
+      <ul class="scope-note-list">{% for k, v in ev.scope.notes.items() if k != 'parsed' %}<li>{{ v }}</li>{% endfor %}</ul>
+    </details>
+
+    <details class="minor">
+      <summary>信源 · 官方 {{ ev.official|length }} 份{% if ev.media %}，{{ ev.media|length }} 家独立报道{% endif %}{% if ev.reprints %}，{{ ev.reprints|length }} 家转载{% endif %}</summary>
+      <ul class="src-list">
+        {% for d in ev.official %}
+        <li class="src src-official">
+          <span class="src-tag">{% if d.role == 'primary' %}官方原文{% elif d.role == 'related' %}官方附件{% else %}上一版{% endif %}</span>
+          <div class="src-main">
+            <a href="{{ d.url }}" rel="noopener" target="_blank">{{ doc_title(d) }}</a>
+            <span class="src-meta">{{ d.source }} · {{ d.time }}</span>
+          </div>
+        </li>
+        {% endfor %}
+        {% for d in ev.media %}
+        <li class="src src-media">
+          <span class="src-tag src-tag-media">报道</span>
+          <div class="src-main">
+            <a href="{{ d.url }}" rel="noopener" target="_blank">{{ doc_title(d) }}</a>
+            <span class="src-meta">{{ d.source }} · {{ d.time }}</span>
+          </div>
+        </li>
+        {% endfor %}
+        {% for d in ev.reprints %}
+        <li class="src">
+          <span class="src-tag src-tag-reprint">转载</span>
+          <div class="src-main">
+            <a href="{{ d.url }}" rel="noopener" target="_blank">{{ doc_title(d) }}</a>
+            <span class="src-meta">{{ d.source }}{% if d.note %} · {{ d.note }}{% endif %}</span>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+  </section>
 </article>
 
 <div class="popover" role="tooltip" hidden></div>

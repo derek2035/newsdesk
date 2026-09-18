@@ -33,9 +33,8 @@
   }
 
   document.querySelectorAll(".passage").forEach(function (el) {
-    var p = el.querySelector(".passage-text");
     var quotes = JSON.parse(el.getAttribute("data-quotes") || "[]");
-    p.innerHTML = highlight(p.textContent, quotes);
+    if (quotes.length) el.innerHTML = highlight(el.textContent, quotes);
   });
 
   function showPop(a) {
@@ -69,8 +68,12 @@
       var target = document.getElementById("p-" + (c && c.passage_id));
       if (target) {
         e.preventDefault();
+        // 段落可能在「附属文件 / 上一版文件」的折叠块里：先展开再跳
         var fold = target.closest("details");
-        if (fold) fold.open = true;
+        while (fold) {
+          fold.open = true;
+          fold = fold.parentElement && fold.parentElement.closest("details");
+        }
         target.scrollIntoView({ block: "center" });
         target.classList.remove("flash");
         void target.offsetWidth;
