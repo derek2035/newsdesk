@@ -33,7 +33,8 @@ MODEL_NAMES = {"claude-fable-5-1": "Claude Fable 5.1", "claude-opus-5": "Claude 
                "claude-sonnet-5": "Claude Sonnet 5", "claude-haiku-4-5-20251001": "Claude Haiku 4.5"}
 TYPE_LABELS = {"central_bank_rate": "央行利率决议", "central_bank_minutes": "央行会议纪要",
                "central_bank_admin": "央行程序性文件", "central_bank_other": "央行其他",
-               "econ_data_release": "经济数据发布", "policy_document": "政策文件"}
+               "econ_data_release": "经济数据发布", "econ_data_interpretation": "官方数据解读",
+               "fiscal_release": "财政发布", "policy_document": "政策文件"}
 
 
 # ---- 格式化 ---------------------------------------------------------------
@@ -175,7 +176,10 @@ def materialize_event(db, ev) -> dict:
 
     notes = json.loads(scope["notes"] or "{}") if scope and scope["notes"] else {}
     return {
-        "id": ev["id"], "slug": ev["slug"], "title": ev["canonical_title"], "grade": ev["grade"],
+        "id": ev["id"], "slug": ev["slug"],
+        "title": ev["title_zh"] or ev["canonical_title"],
+        "title_original": ev["canonical_title"] if ev["title_zh"] else None,
+        "title_is_mt": bool(ev["title_is_mt"]), "grade": ev["grade"],
         "credibility": ev["credibility_tier"], "credibility_label": CRED_LABELS.get(ev["credibility_tier"], ""),
         "event_type": ev["event_type"], "event_type_label": TYPE_LABELS.get(ev["event_type"], ev["event_type"]),
         "first_seen": ev["first_seen"], "time": fmt_time(ev["first_seen"]),
@@ -216,7 +220,10 @@ def build_site(db, out_dir: Path) -> Path:
     shutil.copytree(HERE / "static", tmp / "static")
 
     env = _env()
-    built_at = datetime.now(TZ).strftime("%Y-%m-%d %H:%M")
+    # 用数据的最新时间而不是构建时间：内容没变时生成的站点完全一致，不会每次都产生一个「假更新」
+    latest = db.one("""SELECT MAX(x) t FROM (SELECT MAX(published_at) x FROM document
+                       UNION ALL SELECT MAX(generated_at) FROM interpretation)""")
+    built_at = fmt_time(latest["t"]) if latest and latest["t"] else datetime.now(TZ).strftime("%Y-%m-%d %H:%M")
     events = [materialize_event(db, ev) for ev in db.q("SELECT * FROM event ORDER BY first_seen DESC")]
 
     for ev in events:

@@ -30,6 +30,45 @@ sources:
     url: https://www.gov.cn/zhengce/zuixin/ZUIXINZHENGCE.json
     homepage: https://www.gov.cn/zhengce/
 
+  - id: stats_cn_jd
+    name: 国家统计局 · 数据解读
+    tier: L1
+    lang: zh
+    fetch_method: stats_html
+    display_policy: full
+    doc_type: stats_interpretation
+    url: https://www.stats.gov.cn/sj/sjjd/
+    homepage: https://www.stats.gov.cn/
+
+  - id: mof
+    name: 财政部
+    tier: L1
+    lang: zh
+    fetch_method: mof_html
+    display_policy: full
+    url: https://www.mof.gov.cn/zhengwuxinxi/caizhengxinwen/
+    homepage: https://www.mof.gov.cn/
+
+  - id: ecb
+    name: 欧洲央行 (ECB)
+    tier: L1
+    lang: en
+    fetch_method: rss_article
+    display_policy: full
+    doc_type: ecb_release
+    url: https://www.ecb.europa.eu/rss/press.html
+    homepage: https://www.ecb.europa.eu/
+
+  - id: boe
+    name: 英国央行 (Bank of England)
+    tier: L1
+    lang: en
+    fetch_method: rss_article
+    display_policy: full
+    doc_type: boe_release
+    url: https://www.bankofengland.co.uk/rss/news
+    homepage: https://www.bankofengland.co.uk/
+
   - id: bbc
     name: BBC Business
     tier: L2

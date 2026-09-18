@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 
-from . import cn_gov, fed, manual, rss
+from . import cn_gov, fed, manual, rss, rss_article
 
 log = logging.getLogger(__name__)
 
@@ -16,6 +16,8 @@ ADAPTERS = {
     "fed_rss": fed.fetch,
     "stats_html": cn_gov.fetch_stats,
     "govcn_json": cn_gov.fetch_govcn,
+    "mof_html": cn_gov.fetch_mof,
+    "rss_article": rss_article.fetch,
     "manual": manual.fetch,
 }
 

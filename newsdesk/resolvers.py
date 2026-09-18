@@ -179,6 +179,60 @@ def resolve_policy(title: str) -> Resolution:
     )
 
 
+# ---- 财政部 / 统计局数据解读 / 外国央行 ------------------------------------
+def resolve_stats_interpretation(title: str) -> Resolution:
+    """统计局的解读与答记者问：官方对自家数据的说明，是解读的好参照系。"""
+    return Resolution(event_type="econ_data_interpretation", grade="C", title=f"国家统计局：{title}",
+                      population=CN_POPULATION, industries=ALL_SECTORS, econ_scale=CN_GDP_USD, duration_months=1,
+                      notes={"population": "中国人口（国家统计局 2025 年统计公报，年末 14.05 亿）",
+                             "econ_scale": "中国 GDP（2025 年 140.19 万亿元，按 6.708 折美元）",
+                             "duration": "估计值：影响到下一期数据发布，约 1 个月"},
+                      media_keywords=[CHINA_KEYS, ["解读", "统计局", "经济数据", "economy"]])
+
+
+def resolve_fiscal(title: str) -> Resolution:
+    """财政部财政新闻：国债发行、财政数据、会计准则等。"""
+    major = bool(re.search(r"财政收支|预算|减税|降费|专项债|国债|转移支付|会计准则", title))
+    return Resolution(event_type="fiscal_release", grade="C" if major else "below",
+                      title=f"财政部：{title}",
+                      population=CN_POPULATION if major else None,
+                      industries=None, econ_scale=None, duration_months=None,
+                      notes={"reason": "第 1 版没有财政事件范围解析器：行业、经济规模、持续时间未知（保守）"
+                                       if major else "例行事务性发布"},
+                      media_keywords=[CHINA_KEYS, ["财政", "国债", "预算", "减税", "fiscal", "treasury bond"]]
+                      if major else [])
+
+
+_FOREIGN_CB = {
+    "ecb_release": ("欧洲央行", ["ecb", "european central bank", "euro zone", "eurozone", "欧洲央行", "欧元区"]),
+    "boe_release": ("英国央行", ["boe", "bank of england", "英国央行", "英央行"]),
+}
+
+
+_CB_ROUTINE = re.compile(r"dates for \d{4}|appointments?\b|statistical notice|vacanc|agenda|"
+                         r"minutes of the (securities|foreign exchange|money markets) |transcript of|"
+                         r"list of|publication of|calendar", re.I)
+
+
+def resolve_foreign_cb(doc_type: str, title: str) -> Resolution:
+    name, keys = _FOREIGN_CB[doc_type]
+    if _CB_ROUTINE.search(title):
+        return Resolution(event_type="central_bank_admin", grade="below", title=f"{name}：{title}",
+                          notes={"reason": "例行程序性发布"})
+    decision = bool(re.search(r"monetary policy decision|monetary policy summary|interest rate|bank rate|"
+                              r"asset purchase|policy decision|rate decision", title, re.I))
+    return Resolution(
+        event_type="central_bank_rate" if decision else "central_bank_other",
+        grade="B" if decision else "C", title=f"{name}：{title}",
+        population=None, industries=ALL_SECTORS if decision else None, econ_scale=None,
+        duration_months=1.5 if decision else None,
+        notes={"reason": f"第 1 版没有{name}的范围常量：人口与经济规模显示未知（不估算）",
+               "duration": "估计值：影响到下次议息会议" if decision else ""},
+        media_keywords=[keys, ["rate", "rates", "policy", "decision", "利率", "政策", "决议"]] if decision
+        else [keys],
+    )
+
+
 def resolve(doc_type: str, title: str, passages: list[str]) -> Resolution | None:
     """返回 None 表示该文档不单独成事件（作为别的事件的附属文件）。"""
     if doc_type == "fomc_statement":
@@ -189,6 +243,12 @@ def resolve(doc_type: str, title: str, passages: list[str]) -> Resolution | None
         return resolve_fed_other(doc_type, title)
     if doc_type == "stats_release":
         return resolve_stats(title)
+    if doc_type == "stats_interpretation":
+        return resolve_stats_interpretation(title)
+    if doc_type == "fiscal_release":
+        return resolve_fiscal(title)
+    if doc_type in _FOREIGN_CB:
+        return resolve_foreign_cb(doc_type, title)
     if doc_type == "policy_doc":
         return resolve_policy(title)
     return None

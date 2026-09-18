@@ -169,7 +169,10 @@ def _store_page(db, source, url, title, published_at, doc_type, passages, meta=N
 
 
 def fetch(db, source: dict) -> int:
-    feed = feedparser.parse(http.get(source["url"]).content)
+    try:
+        feed = feedparser.parse(http.get_if_modified(source["url"], db).content)
+    except http.NotModified:
+        return 0
     new = 0
     for e in feed.entries:
         url = canonical_url(e.link.strip())

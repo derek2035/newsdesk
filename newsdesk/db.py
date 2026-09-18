@@ -113,6 +113,12 @@ CREATE TABLE IF NOT EXISTS citation (
   quote TEXT,
   quote_hash TEXT
 );
+CREATE TABLE IF NOT EXISTS http_cache (
+  url TEXT PRIMARY KEY,
+  etag TEXT,
+  last_modified TEXT,
+  checked_at TEXT
+);
 CREATE TABLE IF NOT EXISTS generation_log (
   id INTEGER PRIMARY KEY,
   event_id INTEGER REFERENCES event(id),

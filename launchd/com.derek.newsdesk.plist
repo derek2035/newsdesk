@@ -9,14 +9,9 @@
     <string>/bin/zsh</string>
     <string>/Users/derek/code/newsdesk/scripts/run_daily.sh</string>
   </array>
-  <!-- 每天 07:30 跑一次，覆盖前一天全球的事；电脑睡眠错过时，唤醒后 launchd 会补跑一次 -->
-  <key>StartCalendarInterval</key>
-  <dict>
-    <key>Hour</key>
-    <integer>7</integer>
-    <key>Minute</key>
-    <integer>30</integer>
-  </dict>
+  <!-- 每 30 分钟跑一次；电脑睡眠错过的，唤醒后 launchd 会补跑一次 -->
+  <key>StartInterval</key>
+  <integer>1800</integer>
   <key>WorkingDirectory</key>
   <string>/Users/derek/code/newsdesk</string>
   <key>StandardOutPath</key>

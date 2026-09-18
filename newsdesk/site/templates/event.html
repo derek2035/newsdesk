@@ -14,6 +14,7 @@
       <time class="card-time">{{ ev.time }}</time>
     </div>
     <h1 class="card-title">{{ ev.title }}</h1>
+    {% if ev.title_original %}<p class="title-original">{{ ev.title_original }}{% if ev.title_is_mt %}<span class="mt-tag">标题为机器翻译</span>{% endif %}</p>{% endif %}
     {% if it and it.one_line %}
     <p class="fact-line"><span class="ai-dot" title="AI 生成，见下方署名">AI</span>{{ it.one_line.text }}{% for r in it.one_line.refs %}<a class="cite" href="#p-{{ ev.cites[r.key].passage_id or 'news' }}" data-cite="{{ r.key }}">{{ r.n }}</a>{% endfor %}</p>
     {% endif %}

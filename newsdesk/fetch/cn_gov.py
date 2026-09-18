@@ -56,7 +56,10 @@ def extract_stats(page_html: str) -> list[str]:
 
 
 def fetch_stats(db, source: dict) -> int:
-    items = parse_stats_list(http.get(source["url"]).text, source["url"])
+    try:
+        items = parse_stats_list(http.get_if_modified(source["url"], db).text, source["url"])
+    except http.NotModified:
+        return 0
     items = [i for i in items if _recent(i["date"])][:MAX_ITEMS]
     new = 0
     for it in items:
@@ -73,8 +76,52 @@ def fetch_stats(db, source: dict) -> int:
         if not paras:
             continue
         doc_id, created = db.insert_document(source_id=source["id"], url=url, title=it["title"],
-                                             published_at=published, lang="zh", doc_type="stats_release",
-                                             body_stored=True)
+                                             published_at=published, lang="zh",
+                                             doc_type=source.get("doc_type", "stats_release"), body_stored=True)
+        db.replace_passages(doc_id, [("¶%d" % (i + 1), p) for i, p in enumerate(paras)])
+        new += created
+    return new
+
+
+def parse_mof_list(page_html: str, base_url: str) -> list[dict]:
+    seen, items = set(), []
+    for m in re.finditer(r'href="(\./(\d{6})/t(\d{8})_\d+\.html?)"[^>]*>(.*?)</a>', page_html, flags=re.S):
+        href, _, d, title = m.groups()
+        title = _clean(title)
+        url = urljoin(base_url, href)
+        if len(title) < 6 or url in seen:
+            continue
+        seen.add(url)
+        items.append({"url": url, "title": title, "date": datetime.strptime(d, "%Y%m%d").date()})
+    return items
+
+
+def extract_mof(page_html: str) -> list[str]:
+    return extract_stats(page_html)
+
+
+def fetch_mof(db, source: dict) -> int:
+    try:
+        r = http.get_if_modified(source["url"], db)
+    except http.NotModified:
+        return 0
+    r.encoding = "utf-8"
+    items = [i for i in parse_mof_list(r.text, source["url"]) if _recent(i["date"])][:MAX_ITEMS]
+    new = 0
+    for it in items:
+        url = canonical_url(it["url"])
+        existing = db.get_document_by_url(url)
+        if existing and db.passages_for(existing["id"]):
+            continue
+        page = http.get(url)
+        page.encoding = "utf-8"
+        paras = extract_mof(page.text)
+        if len(paras) < 2:
+            continue
+        doc_id, created = db.insert_document(
+            source_id=source["id"], url=url, title=it["title"],
+            published_at=datetime.combine(it["date"], datetime.min.time(), CST).isoformat(),
+            lang="zh", doc_type="fiscal_release", body_stored=True)
         db.replace_passages(doc_id, [("¶%d" % (i + 1), p) for i, p in enumerate(paras)])
         new += created
     return new
@@ -94,7 +141,10 @@ def extract_govcn(page_html: str) -> list[str]:
 
 
 def fetch_govcn(db, source: dict) -> int:
-    r = http.get(source["url"])
+    try:
+        r = http.get_if_modified(source["url"], db)
+    except http.NotModified:
+        return 0
     r.encoding = "utf-8"
     items = []
     for x in r.json():

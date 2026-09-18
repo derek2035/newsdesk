@@ -18,7 +18,10 @@ def _published(entry) -> str | None:
 
 
 def fetch(db, source: dict) -> int:
-    r = http.get(source["url"])
+    try:
+        r = http.get_if_modified(source["url"], db)
+    except http.NotModified:
+        return 0
     feed = feedparser.parse(r.content)
     new = 0
     for e in feed.entries:

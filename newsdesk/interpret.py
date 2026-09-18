@@ -281,11 +281,39 @@ def interpret_pending(db, slug: str | None = None, limit: int = 12, force: bool 
             continue
         results.append(interpret_event(db, ev))
     translate_titles(db)
+    translate_event_titles(db)
     return results
+
+
+def translate_event_titles(db, batch: int = 30) -> int:
+    """英文官方文件生成的事件标题翻成中文：卡片主标题用中文，原标题保留在下方并标机器翻译。"""
+    rows = db.q("""SELECT e.id, e.canonical_title FROM event e
+                   WHERE e.grade <> 'below' AND e.title_zh IS NULL
+                     AND e.canonical_title GLOB '*[A-Za-z][A-Za-z][A-Za-z]*'
+                     AND length(e.canonical_title) - length(replace(e.canonical_title,' ','')) >= 3""")
+    done = 0
+    for i in range(0, len(rows), batch):
+        chunk = rows[i: i + batch]
+        payload = json.dumps({str(r["id"]): r["canonical_title"] for r in chunk}, ensure_ascii=False)
+        try:
+            res = llm.complete(config.TRANSLATE_MODEL, TRANSLATE_SYSTEM, payload, max_tokens=4000)
+            out = llm.parse_json(res.text)
+        except Exception as e:  # noqa: BLE001 — 翻译失败不影响主流程
+            log.warning("event title translation failed: %s", str(e)[:200])
+            break
+        for r in chunk:
+            zh = (out.get(str(r["id"])) or "").strip()
+            if not zh or not re.search(r"[\u4e00-\u9fff]", zh):
+                continue
+            db.conn.execute("UPDATE event SET title_zh=?, title_is_mt=1 WHERE id=?", (zh, r["id"]))
+            done += 1
+        db.commit()
+    return done
 
 
 # ---- 英文标题机器翻译 -------------------------------------------------------
 TRANSLATE_SYSTEM = ("把给定的英文新闻标题翻译成简体中文，忠实、简洁、不加评论。"
+                    "标题里已有的中文前缀（如「英国央行：」）保留。"
                     "只输出 JSON 对象：键是输入里的 id（字符串），值是译文。")
 
 

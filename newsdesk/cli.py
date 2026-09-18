@@ -47,11 +47,25 @@ def cmd_events(args) -> int:
     return 0
 
 
+AUTH_FLAG = config.LOG_DIR / "llm-auth-failed"
+AUTH_PATTERNS = ("not logged in", "401", "unauthorized", "invalid api key", "authentication")
+
+
 def cmd_interpret(args) -> int:
     from .interpret import interpret_pending
     db = _db()
     res = interpret_pending(db, slug=args.slug, limit=args.limit, force=args.force)
     print(json.dumps(res, ensure_ascii=False, indent=2))
+    # 模型调不通（本机 CLI 掉登录 / key 失效）时留个标记：定时任务据此弹通知，
+    # 否则新事件会一直静默地停在「暂无解读」。
+    failed = [r for r in res if not r.get("ok") and any(p in (r.get("error") or "").lower()
+                                                        for p in AUTH_PATTERNS)]
+    config.LOG_DIR.mkdir(parents=True, exist_ok=True)
+    if failed and len(failed) == len([r for r in res if not r.get("ok")]):
+        AUTH_FLAG.write_text(failed[0].get("error", "")[:500], encoding="utf-8")
+        logging.error("LLM 认证失败，%d 个事件没能生成解读：%s", len(failed), failed[0].get("error", "")[:120])
+    elif res:
+        AUTH_FLAG.unlink(missing_ok=True)
     return 0
 
 

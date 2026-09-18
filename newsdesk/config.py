@@ -28,4 +28,4 @@ MAX_INTERPRETATIONS_PER_RUN = int(os.environ.get("NEWSDESK_MAX_INTERP", "12"))
 
 def load_sources() -> list[dict]:
     data = yaml.safe_load((ROOT / "config" / "sources.yaml").read_text(encoding="utf-8"))
-    return [{"homepage": None, **s} for s in data["sources"]]
+    return [{"homepage": None, "doc_type": None, **s} for s in data["sources"]]
