@@ -26,9 +26,56 @@ FALLBACKS = {
     "claude-sonnet-5": ["claude-haiku-4-5-20251001"],
 }
 CLI_TIMEOUT = int(os.environ.get("NEWSDESK_LLM_TIMEOUT", "600"))
-_STRIP_ENV = ("ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL", "CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_CHILD_SESSION",
-              "CLAUDE_CODE_ENTRYPOINT", "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN",
-              "CLAUDE_CODE_HOST_SESSION_ID", "CLAUDE_CODE_EXECPATH", "CLAUDE_PID")
+# 本会话（Claude Code 桌面端）注入的临时凭据不能给子进程用：它只对当前会话有效。
+# 用户自己的凭据写在登录 shell 的配置里，launchd 与子进程都读不到，所以启动时从登录 shell 取一次。
+_SESSION_ENV = ("CLAUDE_CODE_SESSION_ID", "CLAUDE_CODE_CHILD_SESSION", "CLAUDE_CODE_ENTRYPOINT",
+                "CLAUDE_CODE_MESSAGING_SOCKET", "CLAUDE_CODE_MESSAGING_TOKEN", "CLAUDE_CODE_HOST_SESSION_ID",
+                "CLAUDE_CODE_EXECPATH", "CLAUDE_PID")
+_CRED_VARS = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL")
+_login_creds: dict[str, str] | None = None
+
+
+def login_shell_credentials() -> dict[str, str]:
+    """从登录 shell 读取用户自己的 Anthropic 凭据（只读取，不落盘、不打印）。"""
+    global _login_creds
+    if _login_creds is not None:
+        return _login_creds
+    _login_creds = {}
+    shell = os.environ.get("SHELL", "/bin/zsh")
+    script = "; ".join(f'printf "%s\\n" "${{{v}:-}}"' for v in _CRED_VARS)
+    try:
+        proc = subprocess.run([shell, "-lc", script], capture_output=True, text=True, timeout=25)
+        values = proc.stdout.split("\n")
+        for name, value in zip(_CRED_VARS, values):
+            if value.strip():
+                _login_creds[name] = value.strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    log.info("login shell credentials: %s", ", ".join(sorted(_login_creds)) or "（无，回退到本机 claude 登录态）")
+    return _login_creds
+
+
+def child_env() -> dict[str, str]:
+    """给 `claude -p --bare` 用的环境。
+
+    --bare 只认 ANTHROPIC_API_KEY（不读钥匙串、不弹自定义密钥确认），所以把用户的
+    AUTH_TOKEN 也按 key 传入；网关地址取项目配置，配置没写才用环境里的。
+    令牌只在进程内传递，不写文件、不记日志。
+    """
+    from . import config
+    env = {k: v for k, v in os.environ.items() if k not in _SESSION_ENV}
+    creds = login_shell_credentials()
+    key = creds.get("ANTHROPIC_API_KEY") or creds.get("ANTHROPIC_AUTH_TOKEN")
+    for v in _CRED_VARS:
+        env.pop(v, None)
+    if key:
+        env["ANTHROPIC_API_KEY"] = key
+    base = config.LLM_BASE_URL or creds.get("ANTHROPIC_BASE_URL")
+    if base:
+        env["ANTHROPIC_BASE_URL"] = base
+    return env
+
+
 UNAVAILABLE_TTL = 24 * 3600
 _UNAVAILABLE_FILE = os.environ.get("NEWSDESK_UNAVAILABLE_FILE",
                                    os.path.join(os.path.dirname(__file__), "..", "data", "model_unavailable.json"))
@@ -67,7 +114,8 @@ class LLMResult:
 
 
 def backend() -> str:
-    return "anthropic" if os.environ.get("ANTHROPIC_API_KEY") else "claude_cli"
+    """NEWSDESK_LLM_BACKEND=anthropic 时走官方 SDK（可设 temperature=0）；默认走本机 claude -p。"""
+    return "anthropic" if os.environ.get("NEWSDESK_LLM_BACKEND") == "anthropic" else "claude_cli"
 
 
 def _call_anthropic(model: str, system: str, prompt: str, max_tokens: int) -> LLMResult:
@@ -80,12 +128,13 @@ def _call_anthropic(model: str, system: str, prompt: str, max_tokens: int) -> LL
 
 
 def _call_cli(model: str, system: str, prompt: str) -> LLMResult:
-    env = {k: v for k, v in os.environ.items() if k not in _STRIP_ENV}
-    cmd = ["claude", "-p", "--model", model, "--output-format", "json", "--tools", "",
+    env = child_env()
+    # --bare：跳过 CLAUDE.md 发现、钩子、插件，认证严格走 ANTHROPIC_API_KEY —— 定时任务要的就是这种纯函数调用
+    cmd = ["claude", "-p", prompt, "--model", model, "--output-format", "json", "--bare", "--tools", "",
            "--system-prompt", system, "--no-session-persistence"]
     with tempfile.TemporaryDirectory(prefix="newsdesk-llm-") as cwd:  # 空目录：不读任何 CLAUDE.md
         try:
-            proc = subprocess.run(cmd, input=prompt, capture_output=True, text=True, env=env, cwd=cwd,
+            proc = subprocess.run(cmd, input="", capture_output=True, text=True, env=env, cwd=cwd,
                                   timeout=CLI_TIMEOUT)
         except subprocess.TimeoutExpired as e:
             raise LLMError(f"{model}: timeout after {CLI_TIMEOUT}s") from e

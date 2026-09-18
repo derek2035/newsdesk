@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/zsh -l
 # launchd 入口：每 30 分钟跑一次。任何一步失败都不发布，站点停在上一个好版本。
 # launchd 不继承登录 shell 的 PATH 与环境变量，这里全部显式设置。
 set -u
@@ -7,8 +7,9 @@ ROOT="/Users/derek/code/newsdesk"
 export PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.local/bin"
 export HOME="${HOME:-/Users/derek}"
 export LANG="zh_CN.UTF-8"
-# 不让上层会话的认证变量干扰 `claude -p`（它会用本机登录的订阅账号）
-unset ANTHROPIC_AUTH_TOKEN ANTHROPIC_BASE_URL CLAUDE_CODE_SESSION_ID CLAUDE_CODE_CHILD_SESSION
+# 以登录 shell 启动（见上面的 -l）：这样能读到你在 shell 配置里设置的 ANTHROPIC_* 凭据。
+# 只清掉桌面端会话注入的临时变量，用户自己的凭据保留。
+unset CLAUDE_CODE_SESSION_ID CLAUDE_CODE_CHILD_SESSION CLAUDE_CODE_ENTRYPOINT
 
 mkdir -p "$ROOT/logs"
 cd "$ROOT" || exit 1

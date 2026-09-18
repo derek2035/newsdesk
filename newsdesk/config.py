@@ -26,6 +26,16 @@ PROMPT_VERSION = "interp-v5"
 MAX_INTERPRETATIONS_PER_RUN = int(os.environ.get("NEWSDESK_MAX_INTERP", "12"))
 
 
+def llm_settings() -> dict:
+    path = ROOT / "config" / "llm.yaml"
+    if not path.exists():
+        return {}
+    return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+
+
+LLM_BASE_URL = os.environ.get("NEWSDESK_LLM_BASE_URL") or (llm_settings().get("base_url") or "").strip() or None
+
+
 def load_sources() -> list[dict]:
     data = yaml.safe_load((ROOT / "config" / "sources.yaml").read_text(encoding="utf-8"))
     return [{"homepage": None, "doc_type": None, **s} for s in data["sources"]]

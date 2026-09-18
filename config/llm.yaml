@@ -1,0 +1,6 @@
+# 模型调用的非机密配置。密钥不写在这里：运行时从你的 shell 环境读取
+# （ANTHROPIC_API_KEY，或 ANTHROPIC_AUTH_TOKEN——两者等价，会被当作 key 传给 CLI）。
+#
+# base_url 是你在用的推理网关地址。留空则用环境变量里的 ANTHROPIC_BASE_URL。
+# 注意：令牌必须和网关匹配；把网关换成 api.anthropic.com 而令牌是网关签发的，会全部 401。
+base_url: https://api.ppxsh.com
