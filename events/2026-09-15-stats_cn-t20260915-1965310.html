@@ -21,44 +21,18 @@
   </div>
 </header>
 <main class="wrap">
-<article class="card card-c" data-grade="C">
+<article class="card" data-grade="C">
 
-  <div class="card-badges">
-    <span class="cred cred-confirmed">已确认</span>
-    <span class="grade grade-C" title="等级决定解读用的算力档位，不是重要性结论">C</span>
-    <span class="type-chip">经济数据发布</span>
-    <time class="card-time">2026-09-15 10:00</time>
-  </div>
-
-  <h1 class="card-title">国家统计局：2026年1—8月份全国房地产市场基本情况</h1>
-
-  <section class="scope" aria-label="影响范围">
-    <div class="scope-item"><span class="scope-k">人口</span><span class="scope-v">14.05 亿</span></div>
-    <div class="scope-item"><span class="scope-k">行业</span><span class="scope-v">3 个</span></div>
-    <div class="scope-item"><span class="scope-k">经济规模</span><span class="scope-v">20.9 万亿美元</span></div>
-    <div class="scope-item"><span class="scope-k">持续时间</span><span class="scope-v">约 1 个月<em class="est">估计</em></span></div>
-    <details class="scope-notes">
-      <summary>范围分 22.94 · 怎么算的</summary>
-      <p class="formula-line">score = log₁₀(人口) + log₁₀(持续月数) + log₁₀(行业数) + log₁₀(经济规模美元)，未知维度不计入</p>
-      <ul><li>中国人口（国家统计局 2025 年统计公报，年末 14.05 亿）</li><li>综合性数据按 11 个一级行业；分项数据保守按 3 个计</li><li>中国 GDP（2025 年 140.19 万亿元，按 6.708 折美元）</li><li>估计值：影响到下一期数据发布，约 1 个月</li></ul>
-    </details>
-  </section>
-
-  <section class="sources" aria-label="信源">
-    <h2 class="block-title">信源</h2>
-    <ul class="src-list">
-      <li class="src src-official">
-        <span class="src-tag">官方原文</span>
-        <div class="src-main">
-          <a href="https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965310.html" rel="noopener" target="_blank"><span class="doc-title" lang="zh">2026年1—8月份全国房地产市场基本情况</span>
-</a>
-          <span class="src-meta">国家统计局 · 2026-09-15 10:00</span>
-        </div>
-      </li>
-    </ul>
-  </section>
-
-  <p class="fact-line"><span class="ai-dot" title="AI 生成，见下方署名">AI</span>国家统计局发布2026年1—8月全国房地产数据，开发投资47979亿元，同比下降19.9%，新建商品房销售面积49880万平方米，同比下降12.1%<a class="cite" href="#p-394" data-cite="c1">1</a><a class="cite" href="#p-397" data-cite="c2">2</a></p>
+  <header class="card-head">
+    <div class="card-badges">
+      <span class="cred cred-confirmed">已确认</span>
+      <span class="grade grade-C" title="等级决定解读用的算力档位，不是重要性结论">C</span>
+      <span class="type-chip">经济数据发布</span>
+      <time class="card-time">2026-09-15 10:00</time>
+    </div>
+    <h1 class="card-title">国家统计局：2026年1—8月份全国房地产市场基本情况</h1>
+    <p class="fact-line"><span class="ai-dot" title="AI 生成，见下方署名">AI</span>国家统计局发布2026年1—8月全国房地产数据，开发投资47979亿元，同比下降19.9%，新建商品房销售面积49880万平方米，同比下降12.1%<a class="cite" href="#p-394" data-cite="c1">1</a><a class="cite" href="#p-397" data-cite="c2">2</a></p>
+  </header>
 
   <section class="ai-block" aria-label="AI 解读">
     <header class="ai-head">
@@ -66,20 +40,12 @@
       <span class="ai-sign">模型 <b>claude-sonnet-5</b> · 生成于 2026-09-17 23:30 · 提示词 interp-v3</span>
       <span class="ai-gate">校验通过 5 / 5 条结论，未通过的已丢弃</span>
     </header>
-<details class="c-fold"><summary>展开完整解读</summary>    <div class="ai-sec">
-      <h3>1. 发生了什么</h3>
-      <ul class="claims">
-        <li class="claim">
-          <span class="claim-text">国家统计局发布2026年1—8月全国房地产数据，开发投资47979亿元，同比下降19.9%，新建商品房销售面积49880万平方米，同比下降12.1%</span><a class="cite" href="#p-394" data-cite="c1">1</a><a class="cite" href="#p-397" data-cite="c2">2</a>          <span class="ev ev-e1" title="E1 直接数据：结论直接来自原文">E1</span>
-        </li>
-      </ul>
-    </div>
     <div class="ai-sec">
-      <h3>2. 变了什么</h3>
+      <h2>1. 变了什么</h2>
       <p class="muted">库里没有上一版文件，无法做条文对比。</p>
     </div>
     <div class="ai-sec">
-      <h3>3. 量级锚定</h3>
+      <h2>2. 量级锚定</h2>
       <ul class="claims">
         <li class="claim">
           <span class="claim-text">二手房交易网签面积54923万平方米，比新建商品房销售面积多5043万平方米</span><a class="cite" href="#p-397" data-cite="c3">3</a>          <span class="ev ev-e2" title="E2 计算推导：由原文数字经公式算出">E2</span>
@@ -96,29 +62,130 @@
       </ul>
     </div>
     <div class="ai-sec">
-      <h3>4. 各源差异</h3>
+      <h2>3. 各源差异</h2>
       <p class="muted">没有可对照的媒体报道。</p>
     </div>
-</details>  </section>
+  </section>
 
-  <section class="passages" aria-label="引用的原文">
-    <h2 class="block-title">引用的原文</h2>
-    <blockquote class="passage" id="p-394" data-quotes="[&#34;1—8月份，全国房地产开发投资47979亿元,同比下降19.9%（按可比口径计算，详见附注5）&#34;, &#34;1—8月份，全国房地产开发投资47979亿元，同比下降19.9%（按可比口径计算，详见附注5）；其中，住宅投资37017亿元，下降19.7%&#34;]">
-      <p class="passage-text">1—8月份，全国房地产开发投资47979亿元，同比下降19.9%（按可比口径计算，详见附注5）；其中，住宅投资37017亿元，下降19.7%。</p>
-      <footer><a href="https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965310.html" rel="noopener" target="_blank">国家统计局 · 2026年1—8月份全国房地产市场基本情况</a> <span class="muted">2026-09-15 · ¶2</span></footer>
-    </blockquote>
-    <blockquote class="passage" id="p-397" data-quotes="[&#34;1—8月份，新建商品房销售面积49880万平方米，同比下降12.1%&#34;, &#34;1—8月份，新建商品房销售面积49880万平方米，同比下降12.1%；其中住宅销售面积下降13.0%。新建商品房销售额47470亿元，下降13.0%；其中住宅销售额下降13.1%。根据住房城乡建设部数据，1—8月份，二手房交易网签面积（见附注6）54923万平方米，同比增长10.6%&#34;]">
-      <p class="passage-text">1—8月份，新建商品房销售面积49880万平方米，同比下降12.1%；其中住宅销售面积下降13.0%。新建商品房销售额47470亿元，下降13.0%；其中住宅销售额下降13.1%。根据住房城乡建设部数据，1—8月份，二手房交易网签面积（见附注6）54923万平方米，同比增长10.6%。</p>
-      <footer><a href="https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965310.html" rel="noopener" target="_blank">国家统计局 · 2026年1—8月份全国房地产市场基本情况</a> <span class="muted">2026-09-15 · ¶5</span></footer>
-    </blockquote>
-    <blockquote class="passage" id="p-398" data-quotes="[&#34;8月末，新建商品房待售面积75349万平方米，同比下降1.1%。其中，待售3年以下面积54819万平方米，下降4.2%&#34;]">
-      <p class="passage-text">8月末，新建商品房待售面积75349万平方米，同比下降1.1%。其中，待售3年以下面积54819万平方米，下降4.2%。</p>
-      <footer><a href="https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965310.html" rel="noopener" target="_blank">国家统计局 · 2026年1—8月份全国房地产市场基本情况</a> <span class="muted">2026-09-15 · ¶6</span></footer>
-    </blockquote>
-    <blockquote class="passage" id="p-400" data-quotes="[&#34;1—8月份，房地产开发企业到位资金50893亿元，同比下降21.0%。其中，国内贷款6880亿元，下降33.3%；自筹资金18432亿元，下降20.0%；定金及预收款16037亿元，下降14.8%；个人按揭贷款6846亿元，下降22.4%&#34;]">
-      <p class="passage-text">1—8月份，房地产开发企业到位资金50893亿元，同比下降21.0%。其中，国内贷款6880亿元，下降33.3%；自筹资金18432亿元，下降20.0%；定金及预收款16037亿元，下降14.8%；个人按揭贷款6846亿元，下降22.4%。</p>
-      <footer><a href="https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965310.html" rel="noopener" target="_blank">国家统计局 · 2026年1—8月份全国房地产市场基本情况</a> <span class="muted">2026-09-15 · ¶8</span></footer>
-    </blockquote>
+  <section class="news" id="news" aria-label="新闻内容">
+    <h2 class="block-title">新闻内容 · 官方原文</h2>
+    <p class="news-meta">
+      <a href="https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965310.html" rel="noopener" target="_blank">2026年1—8月份全国房地产市场基本情况</a>
+      <span class="src-meta">国家统计局 · 2026-09-15 10:00 · 解读引用了其中 4 段</span>
+    </p>
+    <div class="doc-body">
+      <p class="passage" id="p-393" data-quotes="[]">一、房地产开发投资完成情况</p>
+      <p class="passage passage-cited" id="p-394" data-quotes="[&#34;1—8月份，全国房地产开发投资47979亿元,同比下降19.9%（按可比口径计算，详见附注5）&#34;, &#34;1—8月份，全国房地产开发投资47979亿元，同比下降19.9%（按可比口径计算，详见附注5）；其中，住宅投资37017亿元，下降19.7%&#34;]">1—8月份，全国房地产开发投资47979亿元，同比下降19.9%（按可比口径计算，详见附注5）；其中，住宅投资37017亿元，下降19.7%。</p>
+      <p class="passage" id="p-395" data-quotes="[]">1—8月份，房地产开发企业房屋施工面积560770万平方米，同比下降12.8%。其中，住宅施工面积389347万平方米，下降13.2%。房屋新开工面积29894万平方米，下降24.8%。其中，住宅新开工面积21840万平方米，下降25.4%。房屋竣工面积21097万平方米，下降23.7%。其中，住宅竣工面积14798万平方米，下降25.4%。</p>
+      <p class="passage" id="p-396" data-quotes="[]">二、商品房销售和待售情况</p>
+      <p class="passage passage-cited" id="p-397" data-quotes="[&#34;1—8月份，新建商品房销售面积49880万平方米，同比下降12.1%&#34;, &#34;1—8月份，新建商品房销售面积49880万平方米，同比下降12.1%；其中住宅销售面积下降13.0%。新建商品房销售额47470亿元，下降13.0%；其中住宅销售额下降13.1%。根据住房城乡建设部数据，1—8月份，二手房交易网签面积（见附注6）54923万平方米，同比增长10.6%&#34;]">1—8月份，新建商品房销售面积49880万平方米，同比下降12.1%；其中住宅销售面积下降13.0%。新建商品房销售额47470亿元，下降13.0%；其中住宅销售额下降13.1%。根据住房城乡建设部数据，1—8月份，二手房交易网签面积（见附注6）54923万平方米，同比增长10.6%。</p>
+      <p class="passage passage-cited" id="p-398" data-quotes="[&#34;8月末，新建商品房待售面积75349万平方米，同比下降1.1%。其中，待售3年以下面积54819万平方米，下降4.2%&#34;]">8月末，新建商品房待售面积75349万平方米，同比下降1.1%。其中，待售3年以下面积54819万平方米，下降4.2%。</p>
+      <p class="passage" id="p-399" data-quotes="[]">三、房地产开发企业到位资金情况</p>
+      <p class="passage passage-cited" id="p-400" data-quotes="[&#34;1—8月份，房地产开发企业到位资金50893亿元，同比下降21.0%。其中，国内贷款6880亿元，下降33.3%；自筹资金18432亿元，下降20.0%；定金及预收款16037亿元，下降14.8%；个人按揭贷款6846亿元，下降22.4%&#34;]">1—8月份，房地产开发企业到位资金50893亿元，同比下降21.0%。其中，国内贷款6880亿元，下降33.3%；自筹资金18432亿元，下降20.0%；定金及预收款16037亿元，下降14.8%；个人按揭贷款6846亿元，下降22.4%。</p>
+      <p class="passage" id="p-401" data-quotes="[]">表1 2026年1—8月份全国房地产开发和销售情况</p>
+      <p class="passage" id="p-402" data-quotes="[]">指标 | 绝对量 | 同比增长（%）</p>
+      <p class="passage" id="p-403" data-quotes="[]">房地产开发投资（亿元） | 47979 | -19.9</p>
+      <p class="passage" id="p-404" data-quotes="[]">其中：住宅 | 37017 | -19.7</p>
+      <p class="passage" id="p-405" data-quotes="[]">办公楼 | 1774 | -22.0</p>
+      <p class="passage" id="p-406" data-quotes="[]">商业营业用房 | 3136 | -25.5</p>
+      <p class="passage" id="p-407" data-quotes="[]">房屋施工面积（万平方米） | 560770 | -12.8</p>
+      <p class="passage" id="p-408" data-quotes="[]">其中：住宅 | 389347 | -13.2</p>
+      <p class="passage" id="p-409" data-quotes="[]">办公楼 | 24277 | -11.6</p>
+      <p class="passage" id="p-410" data-quotes="[]">商业营业用房 | 48732 | -12.7</p>
+      <p class="passage" id="p-411" data-quotes="[]">房屋新开工面积（万平方米） | 29894 | -24.8</p>
+      <p class="passage" id="p-412" data-quotes="[]">其中：住宅 | 21840 | -25.4</p>
+      <p class="passage" id="p-413" data-quotes="[]">办公楼 | 571 | -42.4</p>
+      <p class="passage" id="p-414" data-quotes="[]">商业营业用房 | 1943 | -24.7</p>
+      <p class="passage" id="p-415" data-quotes="[]">房屋竣工面积（万平方米） | 21097 | -23.7</p>
+      <p class="passage" id="p-416" data-quotes="[]">其中：住宅 | 14798 | -25.4</p>
+      <p class="passage" id="p-417" data-quotes="[]">办公楼 | 703 | -24.6</p>
+      <p class="passage" id="p-418" data-quotes="[]">商业营业用房 | 1383 | -30.8</p>
+      <p class="passage" id="p-419" data-quotes="[]">新建商品房销售面积（万平方米） | 49880 | -12.1</p>
+      <p class="passage" id="p-420" data-quotes="[]">其中：住宅 | 41503 | -13.0</p>
+      <p class="passage" id="p-421" data-quotes="[]">办公楼 | 1307 | -6.2</p>
+      <p class="passage" id="p-422" data-quotes="[]">商业营业用房 | 2810 | -14.3</p>
+      <p class="passage" id="p-423" data-quotes="[]">二手房交易网签面积（万平方米） | 54923 | 10.6</p>
+      <p class="passage" id="p-424" data-quotes="[]">新建商品房销售额（亿元） | 47470 | -13.0</p>
+      <p class="passage" id="p-425" data-quotes="[]">其中：住宅 | 41776 | -13.1</p>
+      <p class="passage" id="p-426" data-quotes="[]">办公楼 | 1605 | -9.1</p>
+      <p class="passage" id="p-427" data-quotes="[]">商业营业用房 | 2473 | -19.1</p>
+      <p class="passage" id="p-428" data-quotes="[]">商品房待售面积（万平方米） | 75349 | -1.1</p>
+      <p class="passage" id="p-429" data-quotes="[]">其中：住宅 | 40083 | -0.5</p>
+      <p class="passage" id="p-430" data-quotes="[]">办公楼 | 5187 | 1.0</p>
+      <p class="passage" id="p-431" data-quotes="[]">商业营业用房 | 13499 | -5.0</p>
+      <p class="passage" id="p-432" data-quotes="[]">房地产开发企业本年到位资金（亿元） | 50893 | -21.0</p>
+      <p class="passage" id="p-433" data-quotes="[]">其中：国内贷款 | 6880 | -33.3</p>
+      <p class="passage" id="p-434" data-quotes="[]">利用外资 | 4 | -77.0</p>
+      <p class="passage" id="p-435" data-quotes="[]">自筹资金 | 18432 | -20.0</p>
+      <p class="passage" id="p-436" data-quotes="[]">定金及预收款 | 16037 | -14.8</p>
+      <p class="passage" id="p-437" data-quotes="[]">个人按揭贷款 | 6846 | -22.4</p>
+      <p class="passage" id="p-438" data-quotes="[]">点击下载：相关数据表</p>
+      <p class="passage" id="p-439" data-quotes="[]">表2 2026年1—8月份东中西部和东北地区房地产开发投资情况</p>
+      <p class="passage" id="p-440" data-quotes="[]">地 区 | 投资额 | 同比增长</p>
+      <p class="passage" id="p-441" data-quotes="[]">（亿元） | 住 宅 | （%） | 住 宅</p>
+      <p class="passage" id="p-442" data-quotes="[]">全国总计 | 47979 | 37017 | -19.9 | -19.7</p>
+      <p class="passage" id="p-443" data-quotes="[]">东部地区 | 28288 | 21065 | -20.5 | -21.2</p>
+      <p class="passage" id="p-444" data-quotes="[]">中部地区 | 9352 | 7767 | -20.8 | -18.7</p>
+      <p class="passage" id="p-445" data-quotes="[]">西部地区 | 9451 | 7484 | -16.3 | -15.5</p>
+      <p class="passage" id="p-446" data-quotes="[]">东北地区 | 889 | 701 | -29.6 | -29.9</p>
+      <p class="passage" id="p-447" data-quotes="[]">注：表中部分数据因四舍五入，存在总计与分地区合计不等的情况。</p>
+      <p class="passage" id="p-448" data-quotes="[]">表3 2026年1—8月份东中西部和东北地区房地产销售情况</p>
+      <p class="passage" id="p-449" data-quotes="[]">地 区 | 新建商品房销售面积 | 新建商品房销售额</p>
+      <p class="passage" id="p-450" data-quotes="[]">绝对数 | 同比增长 | 绝对数 | 同比增长</p>
+      <p class="passage" id="p-451" data-quotes="[]">（万平方米） | （%） | （亿元） | （%）</p>
+      <p class="passage" id="p-452" data-quotes="[]">全国总计 | 49880 | -12.1 | 47470 | -13.0</p>
+      <p class="passage" id="p-453" data-quotes="[]">东部地区 | 22376 | -11.6 | 28814 | -12.6</p>
+      <p class="passage" id="p-454" data-quotes="[]">中部地区 | 13202 | -12.2 | 8778 | -12.7</p>
+      <p class="passage" id="p-455" data-quotes="[]">西部地区 | 12659 | -11.8 | 8750 | -13.3</p>
+      <p class="passage" id="p-456" data-quotes="[]">东北地区 | 1643 | -20.6 | 1128 | -22.4</p>
+      <p class="passage" id="p-457" data-quotes="[]">1.指标解释</p>
+      <p class="passage" id="p-458" data-quotes="[]">房地产开发企业本年完成投资：指报告期内完成的全部用于房屋建设工程、土地开发工程的投资额以及公益性建筑和土地购置费等的投资。该指标是累计数据。</p>
+      <p class="passage" id="p-459" data-quotes="[]">新建商品房销售面积：指报告期内出售新建商品房屋的合同总面积（即双方签署的正式买卖合同中所确认的建筑面积）。该指标是累计数据。</p>
+      <p class="passage" id="p-460" data-quotes="[]">新建商品房销售额：指报告期内出售新建商品房屋的合同总价款（即双方签署的正式买卖合同中所确认的合同总价）。该指标与新建商品房销售面积同口径，也是累计数据。</p>
+      <p class="passage" id="p-461" data-quotes="[]">商品房待售面积：指报告期末已竣工的可供销售或出租的商品房屋建筑面积中，尚未销售或出租的商品房屋建筑面积，包括以前年度竣工和本期竣工的房屋面积，但不包括报告期已竣工的拆迁还建、统建代建、公共配套建筑、房地产公司自用及周转房等不可销售或出租的房屋面积。</p>
+      <p class="passage" id="p-462" data-quotes="[]">房地产开发企业本年到位资金：指房地产开发企业报告期内实际用于房地产开发的各种货币资金。具体细分为国内贷款、利用外资、自筹资金、定金及预收款、个人按揭贷款和其他资金。该指标是累计数据。</p>
+      <p class="passage" id="p-463" data-quotes="[]">房屋施工面积：指房地产开发企业报告期内施工的全部房屋建筑面积。包括本期新开工的面积、上期跨入本期继续施工的房屋面积、上期停缓建在本期恢复施工的房屋面积、本期竣工的房屋面积以及本期施工后又停缓建的房屋面积。多层建筑物的施工面积指各层建筑面积之和。</p>
+      <p class="passage" id="p-464" data-quotes="[]">房屋新开工面积：指房地产开发企业报告期内新开工建设的房屋面积，以单位工程为核算对象。不包括在上期开工跨入报告期继续施工的房屋建筑面积和上期停缓建而在本期复工的建筑面积。房屋的开工以房屋正式开始破土刨槽（地基处理或打永久桩）的日期为准。房屋新开工面积指整栋房屋的全部建筑面积，不能分割计算。</p>
+      <p class="passage" id="p-465" data-quotes="[]">房屋竣工面积：指报告期内房屋建筑按照设计要求已全部完工，达到住人和使用条件，经验收鉴定合格或达到竣工验收标准，可正式移交使用的各栋房屋建筑面积的总和。</p>
+      <p class="passage" id="p-466" data-quotes="[]">2.统计范围</p>
+      <p class="passage" id="p-467" data-quotes="[]">有开发经营活动的房地产开发经营业法人单位。</p>
+      <p class="passage" id="p-468" data-quotes="[]">3.调查方法</p>
+      <p class="passage" id="p-469" data-quotes="[]">按月（1月份除外）进行全面调查。</p>
+      <p class="passage" id="p-470" data-quotes="[]">4.东、中、西部和东北地区划分</p>
+      <p class="passage" id="p-471" data-quotes="[]">东部地区包括北京、天津、河北、上海、江苏、浙江、福建、山东、广东、海南10个省（市）；中部地区包括山西、安徽、江西、河南、湖北、湖南6个省；西部地区包括内蒙古、广西、重庆、四川、贵州、云南、西藏、陕西、甘肃、青海、宁夏、新疆12个省（市、自治区）；东北地区包括辽宁、吉林、黑龙江3个省。</p>
+      <p class="passage" id="p-472" data-quotes="[]">5.同比增速说明</p>
+      <p class="passage" id="p-473" data-quotes="[]">根据房地产开发统计制度、统计执法检查等规定，对上年同期房地产开发投资、新建商品房销售面积等数据进行修订，增速按可比口径计算。</p>
+      <p class="passage" id="p-474" data-quotes="[]">6.二手房交易网签面积是指报告期内城镇二手房网签交易合同总面积，数据来源于住房城乡建设部。</p>
+    </div>
+  </section>
+
+
+  <section class="secondary" aria-label="次要信息">
+    <details class="minor">
+      <summary>影响范围 · 范围分 22.94</summary>
+      <div class="scope">
+        <div class="scope-item"><span class="scope-k">人口</span><span class="scope-v">14.05 亿</span></div>
+        <div class="scope-item"><span class="scope-k">行业</span><span class="scope-v">3 个</span></div>
+        <div class="scope-item"><span class="scope-k">经济规模</span><span class="scope-v">20.9 万亿美元</span></div>
+        <div class="scope-item"><span class="scope-k">持续时间</span><span class="scope-v">约 1 个月<em class="est">估计</em></span></div>
+      </div>
+      <p class="formula-line">score = log₁₀(人口) + log₁₀(持续月数) + log₁₀(行业数) + log₁₀(经济规模美元)，未知维度不计入</p>
+      <ul class="scope-note-list"><li>中国人口（国家统计局 2025 年统计公报，年末 14.05 亿）</li><li>综合性数据按 11 个一级行业；分项数据保守按 3 个计</li><li>中国 GDP（2025 年 140.19 万亿元，按 6.708 折美元）</li><li>估计值：影响到下一期数据发布，约 1 个月</li></ul>
+    </details>
+
+    <details class="minor">
+      <summary>信源 · 官方 1 份</summary>
+      <ul class="src-list">
+        <li class="src src-official">
+          <span class="src-tag">官方原文</span>
+          <div class="src-main">
+            <a href="https://www.stats.gov.cn/sj/zxfb/202609/t20260915_1965310.html" rel="noopener" target="_blank"><span class="doc-title" lang="zh">2026年1—8月份全国房地产市场基本情况</span>
+</a>
+            <span class="src-meta">国家统计局 · 2026-09-15 10:00</span>
+          </div>
+        </li>
+      </ul>
+    </details>
   </section>
 </article>
 
@@ -128,7 +195,7 @@
 <footer class="site-footer">
   <div class="wrap">
     <p>每条 AI 结论都标注模型与生成时间，并可点回官方原文。媒体报道只展示标题与链接。不构成投资建议。</p>
-    <p class="muted">站点生成于 2026-09-18 07:30（北京时间）</p>
+    <p class="muted">站点生成于 2026-09-18 09:25（北京时间）</p>
   </div>
 </footer>
 <script src="../static/card.js" defer></script></body>
