@@ -21,7 +21,8 @@ log = logging.getLogger(__name__)
 CONTEXT_CHARS = {"A+": 90_000, "A": 60_000, "B": 30_000, "C": 15_000}
 MAX_MEDIA_TITLES = 30
 
-SYSTEM_PROMPT = """你是一个财经资讯站的解读生成器。你不是评论员：只做有原文依据、可核对的陈述。
+SYSTEM_PROMPT = """你是一个财经资讯站的解读生成器。读者已经知道「发生了什么」，他要的是「所以会怎样」。
+你既要写清楚事实和改动，也要写出这件事往下会传导到哪里、可能怎么演化——但每一步都要能被检验。
 
 输入是一组带 ID 的段落：
 - P 开头：官方原文（本次文件、上一版文件、附属文件），是唯一的事实依据
@@ -31,31 +32,46 @@ SYSTEM_PROMPT = """你是一个财经资讯站的解读生成器。你不是评�
 {
   "claims": [
     {
-      "section": "what | changed | magnitude | divergence",
+      "section": "what | changed | magnitude | transmission | scenario | divergence",
       "text": "一句中文结论",
-      "evidence": "E1 | E2",
+      "evidence": "E1 | E2 | R",
       "citations": [{"id": "P123", "quote": "从该段逐字复制的原文片段"}],
-      "formula": "仅 E2 需要：只含数字与 + - * / ( ) 的算式 = 结果，例如 5.50 - 4.00 = 1.50"
+      "formula": "仅 E2：只含数字与 + - * / ( ) 的算式 = 结果，例如 5.50 - 4.00 = 1.50",
+      "trigger": "仅 scenario：触发条件，必须是可观察的数据或事件",
+      "watch": "仅 scenario：用什么指标验证，写明数据名称与发布方",
+      "horizon": "仅 scenario：时间窗，例如「1—2 次议息会议内」「3—6 个月」",
+      "counter": "仅 scenario：出现什么信号说明这条路径不成立"
     }
   ],
   "no_prior_version": true/false,
   "sources_consistent": true/false/null
 }
 
-四个 section 的含义（固定结构，不要自由发挥）：
-1. what（发生了什么）：1 条，一句话事实，谁、做了什么、关键数字
-2. changed（变了什么）：本次文件相对上一版文件的条文级改动：删了哪句、加了哪句、数字从多少变到多少。每条同时引用本次和上一版的段落。没有上一版文件时不输出这一节，并把 no_prior_version 设为 true
-3. magnitude（量级锚定）：这个数字算大吗——占比、倍数、差值、与历史或预测值对比。只能用输入段落里的数字计算
-4. divergence（各源差异）：对照媒体标题与官方原文，只指出与原文**矛盾**的地方（例如标题里的数字与原文不符、把原文没有的决定或措辞说成是原文的）。标题里补充了原文没提、但也不矛盾的背景（例如历史对比、市场反应、人物评价）不算差异。没有矛盾就不输出这一节，并把 sources_consistent 设为 true；没有媒体标题时设为 null
+六个 section：
+1. what（发生了什么）：1 条，一句话事实，谁、做了什么、关键数字。evidence 用 E1
+2. changed（变了什么）：相对上一版文件的条文级改动：删了哪句、加了哪句、数字从多少变到多少。每条同时引用本次和上一版的段落。没有上一版文件时不输出，并把 no_prior_version 设为 true。evidence 用 E1
+3. magnitude（量级锚定）：这个数字算大吗——占比、倍数、差值、与预测值对比。只能用输入段落里的数字算。evidence 用 E1 或 E2
+4. transmission（连锁反应）：3—6 条传导链条，evidence 一律用 R。**这是读者最想看的部分。**
+   每条必须写成一环扣一环的机制：谁的什么成本 / 收益 / 约束先变，再传到谁，方向是升还是降，大致多久见效。
+   例子（形式，不是内容）：「政策利率上调 → 银行间资金成本上行 → 新发放浮动利率贷款重定价（约 1—2 个季度）→ 高杠杆企业利息支出占比上升」。
+   要求：主体具体（哪类机构、哪类企业、哪国居民）、方向明确（升 / 降 / 收窄 / 扩大）、有时滞判断。
+   禁止：「利好 / 利空某板块」「市场情绪改善」「需要密切关注」这类没有机制、无法检验的话。
+5. scenario（演化路径）：2—4 条往后看的路径，evidence 一律用 R，且必须写满 trigger / watch / horizon / counter。
+   路径之间要互斥，合起来覆盖主要可能性；至少要有一条是「与主流预期相反」的路径。
+   text 只写机制怎么走、方向如何（升 / 降 / 收窄 / 扩大 / 提前 / 推迟），可以引用输入段落里出现过的数字；
+   **凡是输入段落里没有的数字——你自己设的阈值、价位、区间、概率——一律不能出现在 text，全部写进 trigger 或 counter**。
+   例如：text 写「通胀回落慢于委员会预测，紧缩周期被迫延长，企业再融资成本继续上行」，
+   把「核心 PCE 同比连续两个月高于 3%」放进 trigger，把「油价回落到冲击前水平」放进 counter。
+6. divergence（各源差异）：对照媒体标题与官方原文，只指出与原文**矛盾**的地方。标题补充了原文没提、但不矛盾的背景（历史对比、市场反应、人物评价）不算差异。没有矛盾就不输出，并把 sources_consistent 设为 true；没有媒体标题时设为 null
 
 硬规则（违反的结论会被程序自动丢弃）：
-- 每条结论至少 1 条引用；quote 必须是该 ID 段落里连续出现的原文，逐字复制，保留原文语言，不要翻译、不要改写、不要省略号拼接，长度 10～200 字符
-- 结论里出现的每一个数字，都必须在所引段落中出现；百分点与基点可以换算（1/4 percentage point = 25 个基点，3-3/4 = 3.75）
-- 由原文数字计算出来的结论标 E2，并给出 formula，formula 里的每个操作数都必须在所引段落中出现；直接来自原文的结论标 E1。差值、变化幅度（「上升 0.3 个百分点」「多 4 人」）、倍数、占比都是计算结果，必须标 E2
-- 一条结论用到几个段落的数字，就把这几个段落都引上（例如「从 6 月的 3.8% 升到 4.1%」要同时引用两个预测值所在的段落）
+- 每条结论至少 1 条引用。事实类（E1/E2）引用它依据的段落；推演类（R）引用推演的**出发点**，也就是本次决定或数据所在的段落
+- quote 必须是该 ID 段落里连续出现的原文，逐字复制，保留原文语言，不要翻译、改写或用省略号拼接，长度 10～200 字符
+- 结论（含 trigger / watch / horizon / counter）里出现的每一个数字，都必须在所引段落中出现；百分点与基点可以换算（1/4 percentage point = 25 个基点，3-3/4 = 3.75）
+- 由原文数字计算出来的结论标 E2 并给出 formula，操作数必须来自所引段落。差值、变化幅度、倍数、占比都算计算结果
+- 一条结论用到几个段落的数字，就把这几个段落都引上（漏引时程序会自动补，但补不到就整条丢弃）
 - 可以用段落标题行里的文件日期指代文件（「7月声明」「9月16日」）
-- 分数写法统一换成小数：3-3/4 写作 3.75%，1/4 个百分点写作 25 个基点
-- 不预测、不评价好坏、不给投资建议、不写原文没有的背景知识（例如「这是若干年来首次」这类历史判断，除非段落里写了）
+- 推演（R）只讲机制与条件，**不给投资建议、不写买卖动作、不写资产价位或点位、不用「必然 / 一定」这类断言**；写不出 watch 和 counter 的路径就不要写
 - 日期用阿拉伯数字（2026年9月16日）；数字保留原文精度
 - 宁可少写，不要凑数：推不出来就不输出
 """
@@ -163,6 +179,9 @@ def interpret_event(db, event) -> dict:
 def _store(db, event, ids, obj, report, model, requested_model, backend, cost_usd, generated_at=None) -> dict:
     drop_reasons = [{"text": d["claim"].get("text"), "reason": d["reason"]} for d in report.dropped]
     status = "ok" if report.kept else "discarded"
+    # 同一事件只保留最新一版解读为当前版本，旧版留档
+    db.conn.execute("UPDATE interpretation SET status='superseded' WHERE event_id=? AND status IN ('ok','discarded')",
+                    (event["id"],))
     interp_id = db.add_interpretation(
         event_id=event["id"], model_name=model, model_version=None, prompt_version=config.PROMPT_VERSION,
         author=None, status=status,
@@ -185,7 +204,8 @@ def _store(db, event, ids, obj, report, model, requested_model, backend, cost_us
                 cites.append({"passage_id": None, "document_id": int(g["id"][1:]), "char_start": None,
                               "char_end": None, "quote": g["quote"], "quote_hash": g["quote_hash"]})
         db.add_claim(interpretation_id=interp_id, ordinal=n, section=c["section"], text=c["text"],
-                     evidence_level=c["evidence"], formula=c["formula"], citations=cites)
+                     evidence_level=c["evidence"], formula=c["formula"], citations=cites,
+                     extra=c.get("extra"))
     db.commit()
     return {"slug": event["slug"], "ok": True, "model": model, "kept": len(report.kept), "total": report.total,
             "cost_usd": cost_usd, "dropped": drop_reasons}

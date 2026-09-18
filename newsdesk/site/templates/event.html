@@ -29,17 +29,28 @@
       <span class="ai-gate">校验通过 {{ it.claims_kept }} / {{ it.claims_total }} 条结论，未通过的已丢弃</span>
     </header>
     {% for sec in it.sections %}
-    <div class="ai-sec">
-      <h2>{{ loop.index }}. {{ sec.title }}</h2>
+    <div class="ai-sec{% if sec.reasoning %} ai-sec-reasoning{% endif %}">
+      <h2>{{ loop.index }}. {{ sec.title }}{% if sec.reasoning %}<span class="reason-tag">推演</span>{% endif %}</h2>
+      {% if sec.reasoning and loop.first or sec.key == 'transmission' %}
+      <p class="reason-note">以下不是原文里的事实，是从上面这些事实出发的机制推理：每条都写出了依据、可观察的指标和证伪信号，供你自己判断，不构成投资建议。</p>
+      {% endif %}
       {% set shown = sec.claims[1:] if sec.key == 'what' and it.one_line else sec.claims %}
       {% if shown %}
-      <ul class="claims">
+      <ul class="claims{% if sec.key == 'scenario' %} claims-scenario{% endif %}">
         {% for c in shown %}
-        <li class="claim">
+        <li class="claim{% if sec.key == 'scenario' %} claim-scenario{% endif %}">
+          {% if c.extra and c.extra.trigger %}<p class="sc-trigger"><span class="sc-k">触发条件</span>{{ c.extra.trigger }}</p>{% endif %}
           <span class="claim-text">{{ c.text }}</span>
           {%- for r in c.refs %}<a class="cite" href="#{% if ev.cites[r.key].kind == 'passage' %}p-{{ ev.cites[r.key].passage_id }}{% else %}news{% endif %}" data-cite="{{ r.key }}">{{ r.n }}</a>{% endfor %}
-          <span class="ev ev-{{ c.evidence|lower }}" title="{% if c.evidence == 'E1' %}E1 直接数据：结论直接来自原文{% else %}E2 计算推导：由原文数字经公式算出{% endif %}">{{ c.evidence }}</span>
+          <span class="ev ev-{{ c.evidence|lower }}" title="{% if c.evidence == 'E1' %}E1 直接数据：结论直接来自原文{% elif c.evidence == 'E2' %}E2 计算推导：由原文数字经公式算出{% else %}推演：从原文事实出发的机制推理，不是事实{% endif %}">{{ c.evidence }}</span>
           {% if c.formula %}<details class="formula"><summary>公式</summary><code>{{ c.formula }}</code></details>{% endif %}
+          {% if c.extra and (c.extra.watch or c.extra.horizon or c.extra.counter) %}
+          <dl class="sc-meta">
+            {% if c.extra.horizon %}<div><dt>时间窗</dt><dd>{{ c.extra.horizon }}</dd></div>{% endif %}
+            {% if c.extra.watch %}<div><dt>看什么</dt><dd>{{ c.extra.watch }}</dd></div>{% endif %}
+            {% if c.extra.counter %}<div><dt>证伪信号</dt><dd>{{ c.extra.counter }}</dd></div>{% endif %}
+          </dl>
+          {% endif %}
         </li>
         {% endfor %}
       </ul>
@@ -49,6 +60,8 @@
       <p class="muted">各源与官方原文一致。</p>
       {% elif sec.key == 'divergence' and it.sources_consistent is none %}
       <p class="muted">没有可对照的媒体报道。</p>
+      {% elif sec.reasoning %}
+      <p class="muted">没有写得出观察指标与证伪信号的推演，这一节留空。</p>
       {% else %}
       <p class="muted">没有通过校验的结论。</p>
       {% endif %}

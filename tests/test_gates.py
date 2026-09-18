@@ -99,3 +99,50 @@ def test_parse_json_repairs_unescaped_cjk_quotes():
     from newsdesk.llm import parse_json
     raw = '```json\n{"claims": [{"text": "印发《服务和保障"十五五"规划》"}]}\n```'
     assert parse_json(raw)["claims"][0]["text"] == '印发《服务和保障"十五五"规划》'
+
+
+def test_reasoning_claims():
+    cites = (("P2", "raise the target range for the federal funds rate"),)
+    ok = {"section": "scenario", "text": "若通胀不回落，年内可能再上调 25 个基点", "evidence": "R",
+          "citations": [{"id": i, "quote": q} for i, q in cites],
+          "trigger": "核心通胀连续两个月不回落", "watch": "美联储点阵图与 FOMC 声明措辞",
+          "horizon": "1—2 次议息会议内", "counter": "就业数据大幅走弱"}
+    assert gates.run_gates({"claims": [ok]}, P, DATES).kept
+
+    no_fields = dict(ok, trigger="", watch="", counter="")
+    assert not gates.run_gates({"claims": [no_fields]}, P, DATES).kept       # 缺触发 / 观察 / 证伪
+
+    advice = dict(ok, text="建议买入短久期债券")
+    assert not gates.run_gates({"claims": [advice]}, P, DATES).kept          # 投资建议
+
+    wrong_section = dict(ok, section="magnitude")
+    assert not gates.run_gates({"claims": [wrong_section]}, P, DATES).schema_ok  # R 只能出现在推演节
+
+    bad_number = dict(ok, text="若通胀不回落，年内可能再上调 75 个基点")
+    assert not gates.run_gates({"claims": [bad_number]}, P, DATES).kept      # 数字仍需有出处
+
+
+def test_autolink_number_from_another_passage():
+    """数字在别的段落里：自动补引用，而不是丢掉整条。"""
+    rep = run(claim("准备金利率从 3.625% 之外的水平上调，本次上调 25 个基点",
+                    cites=(("P2", "raise the target range for the federal funds rate"),)))
+    assert not rep.kept  # 3.625 不在本事件任何段落里，仍然丢弃
+
+    rep2 = gates.run_gates({"claims": [claim(
+        "本次上调 25 个基点，上一次维持在 3.50%–3.75%",
+        cites=(("P2", "raise the target range for the federal funds rate"),))]}, P, DATES)
+    assert rep2.kept and len(rep2.kept[0]["citations"]) == 2   # 自动补上了 P3
+    assert rep2.kept[0]["citations"][1]["auto"] is True
+
+
+def test_multi_part_formula():
+    cites = (("P4", "12 participants at 4.125"), ("P4", "4 participants at 4.375"))
+    assert run(claim("12 人预计 4.125%，4 人预计 4.375%，合计 16 人", evidence="E2", cites=cites,
+                     formula="12 + 4 = 16; 12 + 4 = 16")).kept
+    assert not run(claim("合计 17 人", evidence="E2", cites=cites, formula="12 + 4 = 16; 12 + 4 = 17")).kept
+
+
+def test_parse_json_repairs_trailing_cjk_quote():
+    from newsdesk.llm import parse_json
+    raw = '{"claims": [{"quote": "运输结束后交回核销，严禁"一证多运""}]}'
+    assert parse_json(raw)["claims"][0]["quote"].endswith('严禁"一证多运"')

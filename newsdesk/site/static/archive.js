@@ -39,7 +39,8 @@
       var title = it.grade === "below" ? esc(it.title) : '<a class="a-title" href="events/' + esc(it.slug) + '.html">' + esc(it.title) + "</a>";
       return '<li><div class="a-meta"><time>' + esc(it.time) + '</time><span class="grade grade-' + esc(it.grade.replace("+", "plus")) + '">' +
         esc(gradeLabel[it.grade] || it.grade) + '</span><span class="type-chip">' + esc(it.type_label) + "</span><span>" +
-        esc(it.primary_source) + (it.media_count ? " · " + it.media_count + " 家独立报道" : "") + "</span></div>" + title +
+        esc(it.primary_source) + (it.media_count ? " · " + it.media_count + " 家独立报道" : "") + "</span>" +
+        (it.reasoning ? '<span class="reason-chip">推演 ' + it.reasoning + " 条</span>" : "") + "</div>" + title +
         (it.summary ? '<p class="a-sum">' + esc(it.summary) + "</p>" : "") + "</li>";
     }).join("");
     writeUrl();

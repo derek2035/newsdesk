@@ -98,8 +98,9 @@ CREATE TABLE IF NOT EXISTS claim (
   ordinal INTEGER NOT NULL,
   section TEXT NOT NULL,
   text TEXT NOT NULL,
-  evidence_level TEXT NOT NULL, -- E1 | E2
+  evidence_level TEXT NOT NULL, -- E1 | E2 | R（推演）
   formula TEXT,
+  extra TEXT,                   -- 推演用：trigger / watch / horizon / counter
   status TEXT NOT NULL DEFAULT 'ok'
 );
 CREATE TABLE IF NOT EXISTS citation (
@@ -143,6 +144,13 @@ class DB:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys=ON")
         self.conn.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        cols = {r["name"] for r in self.q("PRAGMA table_info(claim)")}
+        if "extra" not in cols:
+            self.conn.execute("ALTER TABLE claim ADD COLUMN extra TEXT")
+            self.commit()
 
     # ---- generic helpers -------------------------------------------------
     def q(self, sql: str, params: Iterable[Any] = ()) -> list[sqlite3.Row]:
@@ -272,10 +280,12 @@ class DB:
 
     def add_claim(self, *, interpretation_id: int, ordinal: int, section: str, text: str,
                   evidence_level: str, formula: str | None,
-                  citations: list[dict]) -> int:
+                  citations: list[dict], extra: dict | None = None) -> int:
         cur = self.conn.execute(
-            "INSERT INTO claim(interpretation_id,ordinal,section,text,evidence_level,formula) VALUES(?,?,?,?,?,?)",
-            (interpretation_id, ordinal, section, text, evidence_level, formula),
+            "INSERT INTO claim(interpretation_id,ordinal,section,text,evidence_level,formula,extra)"
+            " VALUES(?,?,?,?,?,?,?)",
+            (interpretation_id, ordinal, section, text, evidence_level, formula,
+             json.dumps(extra, ensure_ascii=False) if extra else None),
         )
         cid = cur.lastrowid
         self.conn.executemany(

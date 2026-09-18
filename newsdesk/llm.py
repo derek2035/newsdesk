@@ -138,4 +138,6 @@ def parse_json(text: str) -> dict:
         # 只修复紧贴中文字符 / 书名号的引号，修不好就照常抛错，交给 schema 闸门丢弃。
         cjk = r"[\u4e00-\u9fff《》（）、，。：；0-9]"
         repaired = re.sub(rf'(?<={cjk})"(?={cjk})', '\\"', body)
+        # 值末尾的中文引号：…严禁"一证多运"" → 前一个引号也要转义
+        repaired = re.sub(rf'(?<={cjk})"(?=\s*"\s*[,}}\]])', '\\"', repaired)
         return json.loads(repaired)

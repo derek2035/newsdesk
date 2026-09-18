@@ -22,7 +22,7 @@ GRADE_MODELS = {
     "C": "claude-sonnet-5",
 }
 TRANSLATE_MODEL = "claude-haiku-4-5-20251001"
-PROMPT_VERSION = "interp-v3"
+PROMPT_VERSION = "interp-v5"
 MAX_INTERPRETATIONS_PER_RUN = int(os.environ.get("NEWSDESK_MAX_INTERP", "12"))
 
 

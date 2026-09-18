@@ -25,7 +25,9 @@ from .. import config
 HERE = Path(__file__).parent
 TZ = ZoneInfo(config.TIMEZONE)
 GRADE_RANK = {"A+": 0, "A": 1, "B": 2, "C": 3, "below": 4}
-SECTION_TITLES = {"what": "发生了什么", "changed": "变了什么", "magnitude": "量级锚定", "divergence": "各源差异"}
+SECTION_TITLES = {"what": "发生了什么", "changed": "变了什么", "magnitude": "量级锚定",
+                  "transmission": "连锁反应", "scenario": "演化路径", "divergence": "各源差异"}
+REASONING_SECTIONS = ("transmission", "scenario")
 CRED_LABELS = {"confirmed": "已确认", "unconfirmed": "多方报道但未经官方确认", "doubtful": "来源存疑"}
 TYPE_LABELS = {"central_bank_rate": "央行利率决议", "central_bank_minutes": "央行会议纪要",
                "central_bank_admin": "央行程序性文件", "central_bank_other": "央行其他",
@@ -125,20 +127,23 @@ def materialize_event(db, ev) -> dict:
                                   "source": sources.get(d["source_id"], {}).get("name", d["source_id"]),
                                   "label": "标题", "date": fmt_time(d["published_at"])[:10]}
                 refs.append({"key": key, "n": n})
-            sections[c["section"]].append({"text": c["text"], "evidence": c["evidence_level"], "formula": c["formula"],
-                                           "refs": refs})
+            sections[c["section"]].append({"text": c["text"], "evidence": c["evidence_level"],
+                                           "formula": c["formula"], "refs": refs,
+                                           "extra": json.loads(c["extra"]) if c["extra"] else None})
         sec_meta = json.loads(interp["sections"] or "{}")
         stats = json.loads(interp["stats"] or "{}")
         interpretation = {
             "model": interp["model_name"], "requested_model": sec_meta.get("requested_model"),
             "backend": sec_meta.get("backend"), "generated_at": fmt_time(interp["generated_at"]),
             "prompt_version": interp["prompt_version"], "author": interp["author"],
-            "sections": [{"key": k, "title": SECTION_TITLES[k], "claims": sections.get(k, [])}
-                         for k in SECTION_TITLES],
+            "sections": [{"key": k, "title": SECTION_TITLES[k], "claims": sections.get(k, []),
+                          "reasoning": k in REASONING_SECTIONS} for k in SECTION_TITLES],
             "no_prior_version": sec_meta.get("no_prior_version"),
             "sources_consistent": sec_meta.get("sources_consistent"),
             "claims_total": stats.get("claims_total"), "claims_kept": stats.get("claims_kept"),
         }
+        interpretation["n_transmission"] = len(sections.get("transmission") or [])
+        interpretation["n_scenario"] = len(sections.get("scenario") or [])
         whats = sections.get("what") or []
         interpretation["one_line"] = whats[0] if whats else None
         # 「发生了什么」如果只有这一句，就不再单列一节：它已经在页首
@@ -236,7 +241,9 @@ def build_site(db, out_dir: Path) -> Path:
               "media_count": len(e["media"]),
               "summary": e["interpretation"]["one_line"]["text"] if e["interpretation"] and
               e["interpretation"]["one_line"] else "",
-              "has_interp": bool(e["interpretation"])} for e in events]
+              "has_interp": bool(e["interpretation"]),
+              "reasoning": (e["interpretation"]["n_transmission"] + e["interpretation"]["n_scenario"])
+              if e["interpretation"] else 0} for e in events]
     (tmp / "data" / "index.json").write_text(json.dumps(index, ensure_ascii=False), encoding="utf-8")
     (tmp / "archive.html").write_text(
         env.get_template("archive.html").render(root="", built_at=built_at, page="archive",

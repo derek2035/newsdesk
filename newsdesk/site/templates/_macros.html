@@ -27,6 +27,9 @@
     <p class="row-sources">
       <span class="type-chip">{{ ev.event_type_label }}</span>
       {% for d in ev.official if d.role == 'primary' %}<span>{{ d.source }}</span>{% endfor %}
+      {% if ev.interpretation and (ev.interpretation.n_transmission or ev.interpretation.n_scenario) %}
+      <span class="reason-chip">推演 {{ ev.interpretation.n_transmission }} 条链条 · {{ ev.interpretation.n_scenario }} 条路径</span>
+      {% endif %}
       {% if ev.media %}<span>· {{ ev.media|length }} 家独立报道</span>{% endif %}
       {% if ev.reprints %}<span class="muted">· 另有 {{ ev.reprints|length }} 家转载</span>{% endif %}
     </p>

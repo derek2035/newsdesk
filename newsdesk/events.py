@@ -48,15 +48,24 @@ def _prior_document(db, doc):
     return None
 
 
-def _related_documents(db, doc):
-    if doc["doc_type"] != "fomc_statement":
-        return []
+def _attachments(db, doc):
+    """同一天发布的执行说明与经济预测表。"""
     meta = json.loads(doc["meta"] or "{}")
     d = meta.get("date")
     if not d:
         return []
     return db.q("""SELECT * FROM document WHERE source_id='fed'
                    AND doc_type IN ('fomc_impl_note','fomc_sep_table') AND json_extract(meta,'$.date')=?""", (d,))
+
+
+def _related_documents(db, doc, prior):
+    """本次附件 + 上一版的附件：利率从多少变到多少这种对比，两边都要有出处。"""
+    if doc["doc_type"] != "fomc_statement":
+        return []
+    rows = list(_attachments(db, doc))
+    if prior is not None:
+        rows += list(_attachments(db, prior))
+    return rows
 
 
 def _media_matches(db, doc, keyword_groups: list[list[str]]):
@@ -134,7 +143,7 @@ def build_events(db) -> int:
         prior = _prior_document(db, doc)
         if prior:
             db.add_member(event_id, prior["id"], "prior")
-        for rel in _related_documents(db, doc):
+        for rel in _related_documents(db, doc, prior):
             db.add_member(event_id, rel["id"], "related")
         media = _media_matches(db, doc, res.media_keywords)
         reprints = _mark_reprints(media)
