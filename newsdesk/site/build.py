@@ -29,6 +29,8 @@ SECTION_TITLES = {"what": "发生了什么", "changed": "变了什么", "magnitu
                   "transmission": "连锁反应", "scenario": "演化路径", "divergence": "各源差异"}
 REASONING_SECTIONS = ("transmission", "scenario")
 CRED_LABELS = {"confirmed": "已确认", "unconfirmed": "多方报道但未经官方确认", "doubtful": "来源存疑"}
+MODEL_NAMES = {"claude-fable-5-1": "Claude Fable 5.1", "claude-opus-5": "Claude Opus 5",
+               "claude-sonnet-5": "Claude Sonnet 5", "claude-haiku-4-5-20251001": "Claude Haiku 4.5"}
 TYPE_LABELS = {"central_bank_rate": "央行利率决议", "central_bank_minutes": "央行会议纪要",
                "central_bank_admin": "央行程序性文件", "central_bank_other": "央行其他",
                "econ_data_release": "经济数据发布", "policy_document": "政策文件"}
@@ -133,7 +135,9 @@ def materialize_event(db, ev) -> dict:
         sec_meta = json.loads(interp["sections"] or "{}")
         stats = json.loads(interp["stats"] or "{}")
         interpretation = {
-            "model": interp["model_name"], "requested_model": sec_meta.get("requested_model"),
+            "model": MODEL_NAMES.get(interp["model_name"], interp["model_name"]),
+            "model_id": interp["model_name"],
+            "requested_model": MODEL_NAMES.get(sec_meta.get("requested_model"), sec_meta.get("requested_model")),
             "backend": sec_meta.get("backend"), "generated_at": fmt_time(interp["generated_at"]),
             "prompt_version": interp["prompt_version"], "author": interp["author"],
             "sections": [{"key": k, "title": SECTION_TITLES[k], "claims": sections.get(k, []),

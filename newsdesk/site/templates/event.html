@@ -9,8 +9,7 @@
   {# 头部：可信度标 + 等级标 + 中性标题 + 一句话事实 #}
   <header class="card-head">
     <div class="card-badges">
-      {{ cred_badge(ev) }}
-      {{ grade_badge(ev.grade) }}
+      {% if ev.credibility != 'confirmed' %}{{ cred_badge(ev) }}{% endif %}
       <span class="type-chip">{{ ev.event_type_label }}</span>
       <time class="card-time">{{ ev.time }}</time>
     </div>
@@ -24,9 +23,7 @@
   {% if it %}
   <section class="ai-block" aria-label="AI 解读">
     <header class="ai-head">
-      <span class="ai-label">AI 解读</span>
-      <span class="ai-sign">模型 <b>{{ it.model }}</b>{% if it.requested_model and it.requested_model != it.model %}（{{ it.requested_model }} 不可用，已降级）{% endif %} · 生成于 {{ it.generated_at }} · 提示词 {{ it.prompt_version }}</span>
-      <span class="ai-gate">校验通过 {{ it.claims_kept }} / {{ it.claims_total }} 条结论，未通过的已丢弃</span>
+      <span class="ai-sign">本文由 <b>{{ it.model }}</b> 解读</span>
     </header>
     {% for sec in it.sections %}
     <div class="ai-sec{% if sec.reasoning %} ai-sec-reasoning{% endif %}">
@@ -111,7 +108,7 @@
   {# 三、次要信息：默认收起 #}
   <section class="secondary" aria-label="次要信息">
     <details class="minor">
-      <summary>影响范围 · 范围分 {{ ev.scope.score if ev.scope.score is not none else '—' }}</summary>
+      <summary>影响范围 · 等级 {{ ev.grade }} · 范围分 {{ ev.scope.score if ev.scope.score is not none else '—' }}</summary>
       <div class="scope">
         <div class="scope-item"><span class="scope-k">人口</span><span class="scope-v">{{ ev.scope.population }}</span></div>
         <div class="scope-item"><span class="scope-k">行业</span><span class="scope-v">{{ ev.scope.industries }}</span></div>
@@ -154,6 +151,18 @@
         {% endfor %}
       </ul>
     </details>
+    {% if it %}
+    <details class="minor">
+      <summary>生成记录</summary>
+      <ul class="log-list">
+        <li>模型：{{ it.model }}<code>{{ it.model_id }}</code>{% if it.requested_model and it.requested_model != it.model %}（原定 {{ it.requested_model }} 不可用，已降级）{% endif %}</li>
+        <li>生成时间：{{ it.generated_at }}（北京时间）</li>
+        <li>提示词版本：{{ it.prompt_version }}</li>
+        <li>校验：模型提出 {{ it.claims_total }} 条结论，通过 {{ it.claims_kept }} 条，未通过的已丢弃</li>
+        <li>可信度：{{ ev.credibility_label }}</li>
+      </ul>
+    </details>
+    {% endif %}
   </section>
 </article>
 

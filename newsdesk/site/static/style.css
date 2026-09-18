@@ -136,10 +136,11 @@ code { font-family: var(--mono); font-size: .88em; }
 
 /* 解读：页面主体，独立底色与边框，与原文区明确分离 */
 .ai-block { background: var(--ai-bg); border: 1px solid var(--ai-line); border-radius: var(--radius); padding: 18px 20px 10px; }
-.ai-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; padding-bottom: 12px; border-bottom: 1px dashed var(--ai-line); font-size: 13px; color: var(--ai-ink); }
-.ai-label { font-weight: 700; font-size: 15px; }
-.ai-sign b { font-family: var(--mono); font-weight: 600; }
-.ai-gate { width: 100%; color: var(--muted); }
+.ai-head { padding-bottom: 10px; border-bottom: 1px dashed var(--ai-line); font-size: 13px; color: var(--ai-ink); }
+.ai-sign b { font-weight: 600; }
+.log-list { padding-left: 18px; font-size: 13px; color: var(--ink-2); }
+.log-list li { margin: 3px 0; }
+.log-list code { margin-left: 6px; color: var(--muted); }
 .ai-empty p { color: var(--muted); margin: 14px 0; }
 .ai-sec h2 { font-size: 16px; margin: 18px 0 6px; color: var(--ai-ink); }
 .claims { margin: 0; padding: 0; list-style: none; }
